@@ -47,6 +47,7 @@
       --orange: #ef6c00;
       --rouge: #c62828;
       --gris: #8a94a3;
+      --violet: #7b1fa2;
       --entete: 48px;          /* hauteur des bandeaux fixes en haut */
     }
     body.demo { --entete: 92px; }   /* + bandeau orange DÉMO */
@@ -410,9 +411,53 @@
     .statut.reference { background: #e8ecf1; color: #1b2430; border: 1px solid #c5ccd6; }
     .statut.crise { background: var(--orange); color: #fff; }
     .bulle .a-verifier { color: #8a4b00; font-size: 13px; }
+    /* État d'un point : anneau extérieur (séparé de la bordure par un liseré blanc) */
+    .ps-icone.etat-menace  { box-shadow: 0 0 0 2px #fff, 0 0 0 6px var(--orange), 0 1px 6px rgba(0,0,0,.5); }
+    .ps-icone.etat-touche  { box-shadow: 0 0 0 2px #fff, 0 0 0 6px var(--rouge),  0 1px 6px rgba(0,0,0,.5); }
+    .ps-icone.etat-evacue  { box-shadow: 0 0 0 2px #fff, 0 0 0 6px var(--violet), 0 1px 6px rgba(0,0,0,.5); }
+    @media (prefers-reduced-motion: no-preference) {
+      .ps-icone.etat-menace { animation: pulsation 1.6s ease-in-out infinite; }
+      @keyframes pulsation {
+        50% { box-shadow: 0 0 0 2px #fff, 0 0 0 9px rgba(239,108,0,.55), 0 1px 6px rgba(0,0,0,.5); }
+      }
+    }
+    /* Stations au-dessus des points : leur calque (pane) est plus haut.
+       Le fond transparent de ce calque laisse passer le toucher ; seuls les ronds le captent
+       (et plus rien en mode placement, grâce à la règle .leaflet-interactive ci-dessus). */
+    .leaflet-stations-pane > svg { pointer-events: none; }
+    /* Fenêtre d'un point : état, suivi automatique, boutons, historique */
+    .etat-point { display: inline-block; margin: 0 0 4px 6px; font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 10px; color: #fff; }
+    .etat-point.normal { background: #e8ecf1; color: #1b2430; border: 1px solid #c5ccd6; }
+    .etat-point.menace { background: var(--orange); }
+    .etat-point.touche { background: var(--rouge); }
+    .etat-point.evacue { background: var(--violet); }
+    .bulle .suivi { margin-top: 6px; padding: 6px 8px; background: #f4f6f9; border-radius: 4px; font-size: 13px; }
+    .bulle .suivi p { font-size: 13px; }
+    .boutons-etat { display: flex; gap: 6px; margin: 8px 0 4px; }
+    .boutons-etat button {
+      flex: 1 1 0; min-width: 0;
+      min-height: 44px;                      /* taille confortable au doigt */
+      font: inherit; font-size: 14px; font-weight: 700;
+      border-radius: 6px; cursor: pointer;
+      border: 2px solid currentColor; background: #fff;
+    }
+    .boutons-etat .b-touche { color: var(--rouge); }
+    .boutons-etat .b-evacue { color: var(--violet); }
+    .boutons-etat .b-retabli { color: #1b2430; }
+    .boutons-etat button[aria-pressed="true"] { background: currentColor; }
+    .boutons-etat button[aria-pressed="true"] span { color: #fff; }
+    .boutons-etat button:disabled { opacity: .35; cursor: default; }
+    .boutons-etat button:focus-visible { outline: 2px solid #1d4ed8; outline-offset: 2px; }
+    .historique { margin: 4px 0 0; padding: 0; list-style: none; font-size: 12px; }
+    .historique li { padding: 2px 0; border-top: 1px solid #eef1f5; font-variant-numeric: tabular-nums; }
+    .historique .origine { color: #5d6b7c; }
+    .mc-marque.auto { background: #fde2e1; color: #8a1c13; }
     /* Légende : exemples de bordure des points */
     .legende .anneau { width: 12px; height: 12px; border-radius: 50%; background: #5d6b7c; border: 2px solid #fff; box-shadow: 0 0 0 1px rgba(0,0,0,.35); flex: none; box-sizing: border-box; }
     .legende .anneau.crise { border: 3px solid var(--orange); box-shadow: none; }
+    .legende .anneau.etat-menace { box-shadow: 0 0 0 1px #fff, 0 0 0 4px var(--orange); margin: 0 3px; }
+    .legende .anneau.etat-touche { box-shadow: 0 0 0 1px #fff, 0 0 0 4px var(--rouge);  margin: 0 3px; }
+    .legende .anneau.etat-evacue { box-shadow: 0 0 0 1px #fff, 0 0 0 4px var(--violet); margin: 0 3px; }
     @media (max-width: 767px) { .legende .anneau { width: 11px; height: 11px; } }
 
     /* ---------- Mode démo ---------- */
@@ -583,6 +628,9 @@
         + ' · Hauteurs d’eau : <a href="https://hubeau.eaufrance.fr/page/api-hydrometrie">Hub’Eau</a>'
     }).addTo(carte);
 
+    // Calque dédié aux stations, AU-DESSUS des points (marqueurs à 600, fenêtres à 700)
+    carte.createPane('stations').style.zIndex = 640;
+
     // ---------- Les 4 états possibles d'une station ----------
     const ETATS = {
       normal:    { libelle: 'Normal',    couleur: 'var(--vert)',   hexa: '#2e7d32' },
@@ -601,7 +649,10 @@
         [ETATS.alerte.hexa, 'Alerte'],
         [ETATS.inconnu.hexa, 'Pas de mesure récente'],
         ['anneau', 'Point référencé'],
-        ['anneau crise', 'Point ajouté en crise']
+        ['anneau crise', 'Point ajouté en crise'],
+        ['anneau etat-menace', 'Menacé (auto)'],
+        ['anneau etat-touche', 'Touché'],
+        ['anneau etat-evacue', 'Évacué']
       ];
       for (const [couleur, texte] of lignes) {
         const ligne = document.createElement('div');
@@ -623,6 +674,10 @@
       return div;
     };
     legende.addTo(carte);
+    // Une fenêtre ouverte passe sous la légende (les contrôles de la carte sont au-dessus des fenêtres) :
+    // sur un petit écran, la légende cachait les boutons. On la masque tant qu'une fenêtre est ouverte.
+    carte.on('popupopen', () => { legende.getContainer().hidden = true; });
+    carte.on('popupclose', () => { legende.getContainer().hidden = false; });
 
     // ---------- Stations hydrométriques (API Hub'Eau Hydrométrie v2) ----------
     // Doc : https://hubeau.eaufrance.fr/page/api-hydrometrie
@@ -634,6 +689,9 @@
     const etat = document.getElementById('etat');
     const message = document.getElementById('message');
     const calqueStations = L.layerGroup().addTo(carte);
+    // Dernière hauteur réelle (en m) et nom de chaque station, pour le suivi automatique des points
+    const hauteursReelles = {};
+    const nomsStations = {};
 
     // Appelle l'API et renvoie la réponse JSON (erreur si pas de réponse ou réponse invalide)
     async function appelerApi(url) {
@@ -810,11 +868,19 @@
       // 2. Dernière hauteur et hauteur d'il y a 3 h, pour chaque station (en parallèle)
       const resultats = await Promise.all(stations.map(infosStation));
 
+      // Hauteurs utilisées par le suivi automatique des points : seulement les mesures récentes
+      for (const code in hauteursReelles) delete hauteursReelles[code];
+      for (const r of resultats) {
+        nomsStations[r.station.code_station] = r.station.libelle_station;
+        if (r.mesure && r.recente) hauteursReelles[r.station.code_station] = r.mesure.resultat_obs / 1000;
+      }
+
       // 3. Un marqueur par station ; les plus graves sont dessinés en dernier, donc au-dessus
       const ordre = { inconnu: 0, normal: 1, vigilance: 2, alerte: 3 };
       resultats.sort((a, b) => ordre[a.etat] - ordre[b.etat]);
       for (const r of resultats) {
         L.circleMarker([r.station.latitude_station, r.station.longitude_station], {
+          pane: 'stations',
           radius: r.etat === 'inconnu' ? 7 : 9,
           color: '#fff',
           weight: 2,
@@ -832,6 +898,9 @@
       if (compte('vigilance')) morceaux.push(compte('vigilance') + ' vigilance');
       if (!compte('alerte') && !compte('vigilance')) morceaux.push(compte('normal') + ' normales');
       ecrireEtat(morceaux.join(' · '));
+
+      // Suivi automatique des points référencés (mode réel uniquement)
+      if (!modeDemo && typeof evaluerMenaces === 'function') evaluerMenaces();
 
       if (resultats.every(r => r.erreur)) {
         afficherErreur('Les stations sont affichées, mais les hauteurs d’eau n’ont pas pu être chargées : '
@@ -855,8 +924,12 @@
     const DEMO_MC_CLE = 'metis.demo.mainCourante.v1';
     const DEMO_PS_CLE = 'metis.demo.pointsSensibles.v1';
     // La clé utilisée dépend du mode : réel ou démo (jamais mélangés)
+    // États des points (menacé, touché, évacué…) : stockés à part, par identifiant de point
+    const ETATS_CLE = 'metis.etatsPoints.v1';
+    const DEMO_ETATS_CLE = 'metis.demo.etatsPoints.v1';
     const cleMC = () => (modeDemo ? DEMO_MC_CLE : MC_CLE);
     const clePS = () => (modeDemo ? DEMO_PS_CLE : PS_CLE);
+    const cleEtats = () => (modeDemo ? DEMO_ETATS_CLE : ETATS_CLE);
 
     const MC_TYPES = {
       evenement:   { libelle: 'Événement',    icone: '⚠', couleur: 'var(--type-evenement)' },
@@ -967,10 +1040,11 @@
         heure.textContent = heureAffichee(e);
         entete.append(numero, badge);
         // Marque « scénario » (ajoutée automatiquement par la démo) ou « démo » (saisie pendant la démo)
-        if (e.scenario || e.demo) {
+        // Marque « auto » : écrite par la machine (alerte de menace, menace levée)
+        if (e.scenario || e.demo || e.auto) {
           const marque = document.createElement('span');
-          marque.className = 'mc-marque' + (e.scenario ? ' scenario' : '');
-          marque.textContent = e.scenario ? 'scénario' : 'démo';
+          marque.className = 'mc-marque' + (e.scenario ? ' scenario' : e.auto ? ' auto' : '');
+          marque.textContent = e.scenario ? 'scénario' : e.auto ? 'auto' : 'démo';
           entete.appendChild(marque);
         }
         const corriger = document.createElement('button');
@@ -1055,7 +1129,7 @@
     });
 
     // Ajoute une entrée (formulaire, création d'un point, ou information du scénario de démo)
-    function ajouterEntree({ type, texte, corrige, lieu, scenario }) {
+    function ajouterEntree({ type, texte, corrige, lieu, scenario, auto }) {
       // On relit le stockage juste avant d'ajouter (au cas où un autre onglet aurait écrit entre-temps)
       const enStock = lireStockage();
       if (enStock.length > entrees.length) entrees = enStock;
@@ -1067,8 +1141,12 @@
       };
       if (corrige) entree.corrige = corrige;
       if (lieu) entree.lieu = lieu;
+      if (auto) entree.auto = true;
       if (modeDemo) {
-        if (scenario) {
+        if (auto) {
+          // Entrée automatique pendant la démo : heure simulée du moment
+          entree.sim = Math.floor(tSim);
+        } else if (scenario) {
           // Information du scénario : heure simulée prévue, source, marque « scénario »
           entree.sim = scenario.t_h * 60;
           entree.scenario = scenario.id;
@@ -1104,7 +1182,7 @@
         ? 'La main courante est déjà vide.'
         : 'Effacer définitivement les ' + entrees.length + ' entrées de la main courante'
           + (points.length ? ' et les ' + points.length + ' points ajoutés en crise' : '')
-          + ' ? Les points référencés sont conservés.';
+          + ' ? Les états des points seront remis à zéro. Les points référencés sont conservés.';
       document.getElementById('mc-oui').hidden = vide;
       mc.confirmation.hidden = false;
     });
@@ -1112,8 +1190,10 @@
     document.getElementById('mc-oui').addEventListener('click', () => {
       entrees = [];
       points = [];
+      etatsPoints = {};
       try { localStorage.removeItem(cleMC()); } catch (e) { /* rien à faire */ }
       try { localStorage.removeItem(clePS()); } catch (e) { /* rien à faire */ }
+      try { localStorage.removeItem(cleEtats()); } catch (e) { /* rien à faire */ }
       mc.confirmation.hidden = true;
       annulerCorrection();
       arreterPlacement();
@@ -1126,6 +1206,7 @@
     window.addEventListener('storage', ev => {
       if (ev.key === cleMC()) { entrees = lireStockage(); afficherEntrees(); }
       if (ev.key === clePS()) { points = lirePoints(); afficherPoints(); afficherEntrees(); }
+      if (ev.key === cleEtats()) { etatsPoints = lireEtats(); afficherPoints(); }
     });
 
     // =====================================================================
@@ -1211,12 +1292,13 @@
 
     // Icône ronde : couleur de la famille, emoji du type, bordure selon le statut.
     // Le HTML ne contient que nos propres emojis et couleurs, jamais le texte saisi.
-    function iconePoint(type, statut) {
+    function iconePoint(type, statut, etatPoint) {
       const t = PS_TYPES[type] || PS_TYPES.autre;
       const couleur = type ? PS_FAMILLES[t.famille].couleur : '#ffffff';
+      const anneau = ETATS_POINT[etatPoint] && etatPoint !== 'normal' ? ' etat-' + etatPoint : '';
       return L.divIcon({
         className: '',
-        html: '<div class="ps-icone ' + statut + '" style="background:' + couleur + '">' + (type ? t.icone : '') + '</div>',
+        html: '<div class="ps-icone ' + statut + anneau + '" style="background:' + couleur + '">' + (type ? t.icone : '') + '</div>',
         iconSize: [30, 30],
         iconAnchor: [15, 15],
         popupAnchor: [0, -15]
@@ -1238,6 +1320,9 @@
       };
       ajouter('h3', t.icone + ' ' + p.nom);
       ajouter('span', reference ? 'Référencé (préparation)' : 'Ajouté en crise', 'statut ' + (reference ? 'reference' : 'crise'));
+      const statutActuel = etatDe(p.id).statut;
+      ajouter('span', 'État : ' + ETATS_POINT[statutActuel].libelle, 'etat-point ' + statutActuel);
+      ajouterBoutonsEtat(div, p);   // en haut de la fenêtre : toujours visibles, même sur téléphone
       ajouter('p', 'Famille : ' + famillePoint(p).libelle);
       ajouter('p', 'Type : ' + t.libelle);
       if (reference) {
@@ -1250,6 +1335,7 @@
           : 'Ajouté le ' + dateHeure(p.date));
         if (p.demo) ajouter('p', 'Saisie pendant la démo.', 'gris');
       }
+      ajouterSuiviEtHistorique(div, p);
       const liees = entrees.filter(e => e.lieu === p.id).map(e => '#' + e.n);
       ajouter('p', 'Entrées liées : ' + (liees.length ? liees.join(', ') : 'aucune'));
       ajouter('p', 'Point ' + p.id, 'gris');
@@ -1262,12 +1348,13 @@
       for (const p of tousPoints()) {
         const reference = p.statut === 'reference';
         marqueursPoints[p.id] = L.marker([p.lat, p.lng], {
-          icon: iconePoint(p.type, reference ? 'reference' : 'crise'),
+          icon: iconePoint(p.type, reference ? 'reference' : 'crise', etatDe(p.id).statut),
           title: p.nom,
           zIndexOffset: reference ? 400 : 500   // les points ajoutés en crise passent au-dessus
         })
           // contenu recalculé à chaque ouverture ; la fenêtre s'ouvre sous le bouton « + Point sensible »
-          .bindPopup(() => bullePoint(p), { autoPanPaddingTopLeft: L.point(10, 70), autoPanPaddingBottomRight: L.point(10, 10) })
+          // hauteur maximale de la fenêtre adaptée à la carte (petite sur téléphone), le reste défile
+          .bindPopup(() => bullePoint(p), { maxHeight: Math.max(200, Math.min(380, carte.getSize().y - 130)), autoPanPaddingTopLeft: L.point(10, 70), autoPanPaddingBottomRight: L.point(10, 10) })
           .addTo(calquePoints);
       }
       remplirMenuLieu();
@@ -1316,6 +1403,7 @@
       }
       afficherPoints();
       afficherEntrees();   // les entrées liées à un point référencé affichent alors son nom
+      evaluerMenaces();    // si les hauteurs réelles sont déjà connues
     }
 
     // Bouton « + Point sensible », en haut à droite de la carte
@@ -1370,7 +1458,7 @@
 
     function ouvrirCreation(latlng) {
       positionProvisoire = latlng;
-      marqueurProvisoire = L.marker(latlng, { icon: iconePoint('', 'provisoire'), interactive: false }).addTo(carte);
+      marqueurProvisoire = L.marker(latlng, { icon: iconePoint('', 'provisoire', 'normal'), interactive: false }).addTo(carte);
       ps.nom.value = '';
       ps.type.value = '';
       ps.erreur.textContent = '';
@@ -1407,7 +1495,7 @@
     }
 
     ps.type.addEventListener('change', () => {
-      if (marqueurProvisoire) marqueurProvisoire.setIcon(iconePoint(ps.type.value, 'provisoire'));
+      if (marqueurProvisoire) marqueurProvisoire.setIcon(iconePoint(ps.type.value, 'provisoire', 'normal'));
     });
     ps.annuler.addEventListener('click', annulerCreation);
 
@@ -1452,6 +1540,193 @@
       if (placementActif) arreterPlacement();
       if (!ps.formulaire.hidden) annulerCreation();
     });
+
+    // =====================================================================
+    //  ÉTATS DES POINTS
+    //  Principe : la machine signale une menace, seul l'humain constate et décide.
+    //  - « Menacé » (auto) : la station de référence atteint la hauteur critique du point
+    //    (points référencés qui ont station_reference + hauteur_critique) ;
+    //    « Menace levée » (auto) quand l'eau redescend sous la hauteur critique moins 5 cm.
+    //  - « Touché », « Évacué », « Rétabli » : boutons dans la fenêtre du point (humain).
+    //    Un point touché ou évacué ne change plus tout seul ; seul « Rétabli » le remet en suivi auto.
+    //  - Stockés à part (par identifiant), avec l'historique : les points eux-mêmes ne sont jamais modifiés.
+    // =====================================================================
+    const ETATS_POINT = {
+      normal: { libelle: 'Normal' },
+      menace: { libelle: 'Menacé' },
+      touche: { libelle: 'Touché' },
+      evacue: { libelle: 'Évacué' }
+    };
+    // Libellés des changements, dans l'historique
+    const ACTIONS = {
+      menace:  'Menacé',
+      leve:    'Menace levée',
+      touche:  'Touché',
+      evacue:  'Évacué',
+      retabli: 'Rétabli'
+    };
+    const MARGE_LEVEE = 0.05;   // la menace n'est levée que 5 cm sous la hauteur critique (évite les allers-retours)
+    let etatsPoints = {};       // identifiant du point → { statut, historique: [...] }
+
+    function lireEtats() {
+      try {
+        const brut = localStorage.getItem(cleEtats());
+        const donnees = brut ? JSON.parse(brut) : {};
+        return donnees && typeof donnees === 'object' && !Array.isArray(donnees) ? donnees : {};
+      } catch (e) {
+        return {};
+      }
+    }
+
+    function ecrireEtats() {
+      try { localStorage.setItem(cleEtats(), JSON.stringify(etatsPoints)); } catch (e) { stockageOk = false; }
+    }
+
+    function etatDe(id) {
+      const e = etatsPoints[id];
+      return e && ETATS_POINT[e.statut] ? e : { statut: 'normal', historique: [] };
+    }
+
+    // Hauteur actuelle (en m) d'une station : simulée en démo, dernière mesure récente en réel ; null si inconnue
+    function hauteurStation(code) {
+      if (modeDemo) {
+        const st = scenario && scenario.stations.find(x => x.code === code);
+        return st ? hauteurSimulee(st, tSim) : null;
+      }
+      return code in hauteursReelles ? hauteursReelles[code] : null;
+    }
+
+    function nomStation(code) {
+      if (modeDemo) {
+        const st = scenario && scenario.stations.find(x => x.code === code);
+        if (st) return st.nom;
+      }
+      return nomsStations[code] || (SEUILS[code] && SEUILS[code].nom) || 'station ' + code;
+    }
+
+    // Change l'état d'un point : historique, marqueur, fenêtre, entrée en main courante
+    function changerEtat(p, action, origine, hauteur) {
+      const nouveauStatut = { menace: 'menace', leve: 'normal', touche: 'touche', evacue: 'evacue', retabli: 'normal' }[action];
+      const avant = etatDe(p.id);
+      const ligne = { action, origine, date: new Date().toISOString() };
+      if (modeDemo) ligne.sim = Math.floor(tSim);
+      if (hauteur != null) ligne.hauteur = Math.round(hauteur * 100) / 100;
+      etatsPoints[p.id] = { statut: nouveauStatut, historique: avant.historique.concat([ligne]) };
+      ecrireEtats();
+
+      const m = marqueursPoints[p.id];
+      if (m) m.setIcon(iconePoint(p.type, p.statut === 'reference' ? 'reference' : 'crise', nouveauStatut));
+
+      if (origine === 'auto') {
+        const texte = action === 'menace'
+          ? 'Alerte automatique : ' + p.nom + ' menacé — ' + nomStation(p.station_reference)
+            + ' à ' + metres(hauteur) + ' (seuil ' + metres(p.hauteur_critique) + ')'
+          : 'Menace levée : ' + p.nom;
+        ajouterEntree({ type: action === 'menace' ? 'evenement' : 'information', texte, lieu: p.id, auto: true });
+      } else {
+        ajouterEntree({ type: 'evenement', texte: 'Statut de ' + p.nom + ' : ' + ACTIONS[action].toLowerCase(), lieu: p.id });
+      }
+      if (m && m.isPopupOpen()) m.getPopup().update();
+    }
+
+    // Suivi automatique : à chaque nouvelle hauteur (démo : à chaque pas ; réel : à chaque chargement)
+    function evaluerMenaces() {
+      for (const p of referentiel) {
+        if (!p.station_reference || typeof p.hauteur_critique !== 'number') continue;
+        const h = hauteurStation(p.station_reference);
+        if (h == null) continue;                                  // pas de mesure : on ne décide rien
+        const statut = etatDe(p.id).statut;
+        if (statut === 'normal' && h >= p.hauteur_critique) {
+          changerEtat(p, 'menace', 'auto', h);
+        } else if (statut === 'menace' && h < p.hauteur_critique - MARGE_LEVEE) {
+          changerEtat(p, 'leve', 'auto', h);
+        }
+        // touché / évacué : décision humaine, la machine n'y touche pas
+      }
+      // Fenêtre de point ouverte : on met à jour la seule ligne « Hauteur actuelle »
+      // (sans reconstruire la fenêtre, pour ne jamais perdre un toucher sur un bouton)
+      for (const id in marqueursPoints) {
+        const m = marqueursPoints[id];
+        const p = m.isPopupOpen() && trouverPoint(id);
+        const ligne = p && p.station_reference && m.getPopup().getElement()
+          && m.getPopup().getElement().querySelector('.hauteur-actuelle');
+        if (ligne) ligne.textContent = texteHauteurActuelle(p);
+      }
+    }
+
+    function texteHauteurActuelle(p) {
+      const h = hauteurStation(p.station_reference);
+      return 'Hauteur actuelle : ' + (h == null ? 'pas de mesure récente' : metres(h));
+    }
+
+    // Petit outil : crée un élément texte dans un parent
+    function creer(balise, texte, classe, parent) {
+      const x = document.createElement(balise);
+      if (texte != null) x.textContent = texte;
+      if (classe) x.className = classe;
+      parent.appendChild(x);
+      return x;
+    }
+
+    // Boutons humains « Touché », « Évacué », « Rétabli » (grands, au doigt)
+    function ajouterBoutonsEtat(div, p) {
+      const statut = etatDe(p.id).statut;
+      const boutons = creer('div', null, 'boutons-etat', div);
+      for (const [action, classe] of [['touche', 'b-touche'], ['evacue', 'b-evacue'], ['retabli', 'b-retabli']]) {
+        const b = creer('button', null, classe, boutons);
+        b.type = 'button';
+        creer('span', ACTIONS[action], null, b);
+        const actif = (action === 'touche' && statut === 'touche') || (action === 'evacue' && statut === 'evacue');
+        b.setAttribute('aria-pressed', actif ? 'true' : 'false');
+        // « Rétabli » n'a de sens qu'après « Touché » ou « Évacué »
+        b.disabled = actif || (action === 'retabli' && statut !== 'touche' && statut !== 'evacue');
+        b.addEventListener('click', () => {
+          // On laisse le toucher se terminer avant de reconstruire la fenêtre : sinon la carte croit
+          // qu'on a touché à côté de la fenêtre et la ferme.
+          setTimeout(() => {
+            changerEtat(p, action, 'humain');
+            if (action === 'retabli') evaluerMenaces();   // retour en suivi automatique
+          }, 0);
+        });
+      }
+    }
+
+    // Dans la fenêtre d'un point : suivi automatique et historique des états
+    function ajouterSuiviEtHistorique(div, p) {
+      const el = (balise, texte, classe, parent) => {
+        const x = document.createElement(balise);
+        if (texte != null) x.textContent = texte;
+        if (classe) x.className = classe;
+        (parent || div).appendChild(x);
+        return x;
+      };
+      const statut = etatDe(p.id).statut;
+
+      // Suivi automatique
+      const suivi = el('div', null, 'suivi');
+      if (p.station_reference && typeof p.hauteur_critique === 'number') {
+        el('p', 'Suivi automatique : ' + nomStation(p.station_reference), null, suivi);
+        el('p', 'Hauteur critique : ' + metres(p.hauteur_critique) + ' (valeur de démo, non officielle)', null, suivi);
+        el('p', texteHauteurActuelle(p), 'hauteur-actuelle', suivi);
+        if (statut === 'touche' || statut === 'evacue') {
+          el('p', 'Suivi automatique suspendu : décision humaine en cours. « Rétabli » le relance.', 'gris', suivi);
+        }
+      } else {
+        el('p', 'Pas de suivi automatique', null, suivi);
+      }
+
+      // Historique des états
+      const historique = etatDe(p.id).historique;
+      el('p', 'Historique : ' + (historique.length ? '' : 'aucun changement'));
+      if (historique.length) {
+        const liste = el('ol', null, 'historique');
+        for (const h of [...historique].reverse().slice(0, 10)) {
+          const li = el('li', null, null, liste);
+          li.append((h.sim != null ? heureSimulee(h.sim) : dateHeure(h.date)) + ' · ' + ACTIONS[h.action] + ' ');
+          el('span', '(' + (h.origine === 'auto' ? 'auto' : 'humain') + ')', 'origine', li);
+        }
+      }
+    }
 
     // =====================================================================
     //  MODE DÉMO
@@ -1564,6 +1839,7 @@
       for (const code in marqueursDemo) delete marqueursDemo[code];
       for (const station of scenario.stations) {
         marqueursDemo[station.code] = L.circleMarker([station.lat, station.lng], {
+          pane: 'stations',
           radius: 9, color: '#fff', weight: 2, fillColor: ETATS.normal.hexa, fillOpacity: 0.95
         })
           .bindPopup(() => bulleStationDemo(station))
@@ -1618,6 +1894,7 @@
         if (tSim >= dureeMinutes()) enLecture = false;
       }
       majStationsDemo();
+      evaluerMenaces();
       injecterInformations();
       majBarre();
     }
@@ -1643,8 +1920,10 @@
     function nouvelleLecture() {
       try { localStorage.removeItem(DEMO_MC_CLE); } catch (e) { /* rien à faire */ }
       try { localStorage.removeItem(DEMO_PS_CLE); } catch (e) { /* rien à faire */ }
+      try { localStorage.removeItem(DEMO_ETATS_CLE); } catch (e) { /* rien à faire */ }
       entrees = [];
       points = [];
+      etatsPoints = {};
       tSim = 0;
       enLecture = true;
       dernierInstant = performance.now();
@@ -1693,6 +1972,7 @@
       calqueStations.addTo(carte);
       entrees = lireStockage();
       points = lirePoints();
+      etatsPoints = lireEtats();
       afficherPoints();
       afficherEntrees();
       chargerStations();                     // vraies données Hub'Eau, rechargées à jour
@@ -1713,6 +1993,7 @@
     });
 
     // Démarrage (mode réel)
+    etatsPoints = lireEtats();
     points = lirePoints();
     afficherPoints();
     entrees = lireStockage();
