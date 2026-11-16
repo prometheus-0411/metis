@@ -1,0 +1,81 @@
+{
+  "titre": "Crue fictive du Rhône et de la Saône",
+  "avertissement": "Scénario FICTIF pour démonstration. Hauteurs inventées, pas des mesures réelles.",
+  "duree_heures": 48,
+  "heure_debut": "06:00",
+  "note_hauteurs": "Hauteurs en mètres, au temps t (heures depuis le début du scénario). Entre deux temps, la hauteur est interpolée en ligne droite. Pic au pont Morand : 3,70 m, sous la crue réelle de 1983 (5,65 m). Les seuils franchis sont les seuils de démo de index.html.",
+  "phases": [
+    { "nom": "Veille",  "debut_h": 0 },
+    { "nom": "Montée",  "debut_h": 8 },
+    { "nom": "Pic",     "debut_h": 22 },
+    { "nom": "Décrue",  "debut_h": 31 }
+  ],
+  "stations": [
+    {
+      "code": "V300002001",
+      "nom": "Le Rhône à Lyon - Pont Morand",
+      "cours_eau": "Le Rhône",
+      "lat": 45.768285,
+      "lng": 4.838421,
+      "hauteurs": [[0, 0.55], [6, 0.70], [10, 1.20], [14, 1.80], [18, 2.60], [22, 3.40], [25, 3.70], [28, 3.50], [32, 2.70], [36, 2.20], [40, 1.60], [44, 1.20], [48, 0.90]]
+    },
+    {
+      "code": "U472002001",
+      "nom": "La Saône à Lyon [Pont La Feuillée]",
+      "cours_eau": "La Saône",
+      "lat": 45.766053,
+      "lng": 4.830535,
+      "hauteurs": [[0, 2.15], [8, 2.25], [14, 2.70], [20, 3.30], [26, 3.90], [30, 4.10], [34, 3.80], [38, 3.30], [44, 2.50], [48, 2.30]]
+    },
+    {
+      "code": "U471001003",
+      "nom": "La Saône à Couzon-au-Mont-d'Or",
+      "cours_eau": "La Saône",
+      "lat": 45.844517,
+      "lng": 4.834336,
+      "hauteurs": [[0, 2.03], [8, 2.10], [14, 2.60], [20, 3.20], [26, 3.70], [30, 3.85], [34, 3.60], [38, 3.10], [44, 2.40], [48, 2.20]]
+    }
+  ],
+  "informations": [
+    {
+      "id": "S1",
+      "t_h": 7,
+      "source": "Vigicrues",
+      "texte": "Vigilance jaune crues sur le Rhône et la Saône à Lyon : montée des eaux attendue dans les prochaines heures."
+    },
+    {
+      "id": "S2",
+      "t_h": 13,
+      "source": "Vigicrues",
+      "texte": "Passage en vigilance orange : le Rhône dépasse les niveaux habituels au pont Morand.",
+      "lieu": "R-PONT-MORAND"
+    },
+    {
+      "id": "S3",
+      "t_h": 17,
+      "source": "Gestionnaire réseau électrique (fictif)",
+      "texte": "Poste électrique Rive-Gauche menacé par la montée du Rhône : coupure préventive envisagée sous 6 h.",
+      "lieu": "R-POSTE"
+    },
+    {
+      "id": "S4",
+      "t_h": 21,
+      "source": "Préfecture",
+      "texte": "Ouverture du centre opérationnel départemental. Point de situation toutes les 2 heures.",
+      "lieu": "R-PREFECTURE"
+    },
+    {
+      "id": "S5",
+      "t_h": 26,
+      "source": "Pompiers",
+      "texte": "Station d'eau potable des Berges : pose de protections en cours, accès par la rive gauche uniquement.",
+      "lieu": "R-EAU"
+    },
+    {
+      "id": "S6",
+      "t_h": 36,
+      "source": "Vigicrues",
+      "texte": "Décrue amorcée sur le Rhône. La Saône reste haute quelques heures encore."
+    }
+  ]
+}
