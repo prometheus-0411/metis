@@ -170,6 +170,7 @@
       --type-decision: #1d4ed8;
       --type-moyen: #6d28d9;
       --type-information: #475569;
+      --type-point: #0f766e;
     }
     #panneau {
       flex: 1 1 auto;
@@ -514,6 +515,53 @@
       background: #ffe0b2; color: #7a3d00;
     }
     .mc-marque.scenario { background: #e0e7ff; color: #312e81; }
+    .mc-marque.ia { background: #ccfbf1; color: #134e4a; }
+
+    /* ---------- Point de situation rédigé par l'IA (étape 8) ---------- */
+    #sit {
+      padding: 12px 16px;
+      background: #fff;
+      border-bottom: 1px solid var(--mc-bord);
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    #sit .sit-tete { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+    #sit-generer {
+      font: inherit; font-size: 15px; font-weight: 600;
+      padding: 10px 14px; min-height: 44px;
+      border: none; border-radius: 4px;
+      background: var(--type-point); color: #fff; cursor: pointer;
+    }
+    #sit-generer:disabled { opacity: .6; cursor: wait; }
+    .sit-aide { margin: 0; font-size: 13px; color: var(--mc-discret); }
+    #sit-brouillon { display: flex; flex-direction: column; gap: 8px; }
+    .sit-bandeau {
+      font-size: 12px; font-weight: 700; letter-spacing: .02em;
+      color: #134e4a; background: #ccfbf1;
+      padding: 4px 8px; border-radius: 4px; align-self: flex-start;
+    }
+    #sit-attente { font-size: 14px; color: var(--mc-discret); }
+    #sit-texte {
+      width: 100%; box-sizing: border-box; min-height: 260px;
+      font: inherit; font-size: 15px; line-height: 1.45;
+      padding: 8px 10px;
+      border: 2px dashed #5eead4; border-radius: 4px;
+      background: #f0fdfa; color: var(--mc-texte);
+    }
+    #sit-texte[readonly] { opacity: .85; }
+    #sit-faits summary { cursor: pointer; font-size: 13px; color: var(--mc-discret); }
+    #sit-faits pre {
+      max-height: 240px; overflow: auto; margin: 6px 0 0;
+      padding: 8px; font-size: 12px; white-space: pre-wrap;
+      background: var(--mc-fond); border: 1px solid var(--mc-bord); border-radius: 4px;
+    }
+    #sit .rangee { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    #sit .rangee button {
+      font: inherit; font-size: 15px; padding: 8px 12px; min-height: 44px;
+      border-radius: 4px; cursor: pointer;
+      background: #fff; color: var(--mc-texte); border: 1px solid var(--mc-bord);
+    }
+    #sit .rangee #sit-valider { background: #1b2430; color: #fff; border-color: #1b2430; font-weight: 600; }
+    #sit-erreur { font-size: 13px; color: #b42318; }
     .mc-source { margin-top: 4px; font-size: 12px; color: var(--mc-discret); }
     #app-avertissement { font-size: 13px; color: #8a4b00; padding: 8px 16px; background: #fff4e5; }
     /* Sur téléphone : la fenêtre de création s'insère juste sous la carte, comme un bloc de la page.
@@ -572,6 +620,30 @@
 
     <!-- Main courante : journal horodaté de la gestion de crise -->
     <aside id="panneau" aria-label="Main courante">
+      <!-- Point de situation rédigé par l'IA (étape 8) : visible seulement si une IA est branchée -->
+      <section id="sit" hidden aria-label="Point de situation">
+        <div class="sit-tete">
+          <h2>Point de situation</h2>
+          <button type="button" id="sit-generer">Générer avec l’IA</button>
+        </div>
+        <p class="sit-aide">L’IA rédige un brouillon à partir des seules données affichées. Vous relisez, corrigez, puis validez.</p>
+        <div id="sit-brouillon" hidden>
+          <span class="sit-bandeau">BROUILLON IA — à relire avant validation</span>
+          <div id="sit-attente" aria-live="polite"></div>
+          <textarea id="sit-texte" aria-label="Brouillon du point de situation" readonly></textarea>
+          <details id="sit-faits">
+            <summary>Ce que l’IA a reçu (fiche de faits)</summary>
+            <pre id="sit-faits-texte"></pre>
+          </details>
+          <div class="rangee">
+            <button type="button" id="sit-valider" disabled>Valider et archiver</button>
+            <button type="button" id="sit-stop" hidden>Arrêter</button>
+            <button type="button" id="sit-copier" disabled>Copier</button>
+            <button type="button" id="sit-abandonner">Abandonner</button>
+          </div>
+          <span id="sit-erreur" role="alert"></span>
+        </div>
+      </section>
       <form id="mc-formulaire" novalidate>
         <h2>Main courante <span id="mc-compte"></span></h2>
         <div class="rangee">
@@ -692,6 +764,7 @@
     // Dernière hauteur réelle (en m) et nom de chaque station, pour le suivi automatique des points
     const hauteursReelles = {};
     const nomsStations = {};
+    let derniersResultats = [];   // dernier chargement réel complet (fiche de faits de l'étape 8)
 
     // Appelle l'API et renvoie la réponse JSON (erreur si pas de réponse ou réponse invalide)
     async function appelerApi(url) {
@@ -867,6 +940,7 @@
 
       // 2. Dernière hauteur et hauteur d'il y a 3 h, pour chaque station (en parallèle)
       const resultats = await Promise.all(stations.map(infosStation));
+      derniersResultats = resultats;   // gardés pour la fiche de faits du point de situation
 
       // Hauteurs utilisées par le suivi automatique des points : seulement les mesures récentes
       for (const code in hauteursReelles) delete hauteursReelles[code];
@@ -935,7 +1009,9 @@
       evenement:   { libelle: 'Événement',    icone: '⚠', couleur: 'var(--type-evenement)' },
       decision:    { libelle: 'Décision',     icone: '✔', couleur: 'var(--type-decision)' },
       moyen:       { libelle: 'Moyen engagé', icone: '⛟', couleur: 'var(--type-moyen)' },
-      information: { libelle: 'Information',  icone: 'ℹ', couleur: 'var(--type-information)' }
+      information: { libelle: 'Information',  icone: 'ℹ', couleur: 'var(--type-information)' },
+      // Point de situation validé (étape 8) : n'apparaît pas dans le menu, seulement via la validation humaine
+      point:       { libelle: 'Point de situation', icone: '📋', couleur: 'var(--type-point)' }
     };
 
     const mc = {
@@ -1047,6 +1123,13 @@
           marque.textContent = e.scenario ? 'scénario' : e.auto ? 'auto' : 'démo';
           entete.appendChild(marque);
         }
+        // Marque « IA relue » / « IA corrigée » : point de situation rédigé par l'IA, validé par un humain
+        if (e.ia) {
+          const marque = document.createElement('span');
+          marque.className = 'mc-marque ia';
+          marque.textContent = e.iaModifie ? 'IA corrigée' : 'IA relue';
+          entete.appendChild(marque);
+        }
         const corriger = document.createElement('button');
         corriger.type = 'button';
         corriger.textContent = 'Corriger';
@@ -1129,7 +1212,7 @@
     });
 
     // Ajoute une entrée (formulaire, création d'un point, ou information du scénario de démo)
-    function ajouterEntree({ type, texte, corrige, lieu, scenario, auto }) {
+    function ajouterEntree({ type, texte, corrige, lieu, scenario, auto, ia }) {
       // On relit le stockage juste avant d'ajouter (au cas où un autre onglet aurait écrit entre-temps)
       const enStock = lireStockage();
       if (enStock.length > entrees.length) entrees = enStock;
@@ -1142,6 +1225,7 @@
       if (corrige) entree.corrige = corrige;
       if (lieu) entree.lieu = lieu;
       if (auto) entree.auto = true;
+      if (ia) { entree.ia = true; entree.iaModifie = !!ia.modifie; }
       if (modeDemo) {
         if (auto) {
           // Entrée automatique pendant la démo : heure simulée du moment
@@ -2000,6 +2084,288 @@
     if (!stockageOk) ecrireStockage();
     afficherEntrees();
     chargerReferentiel();
+  </script>
+
+  <script>
+    // =====================================================================
+    //  POINT DE SITUATION RÉDIGÉ PAR L'IA (étape 8)
+    //  Principe « les faits d'abord » :
+    //  1. le code assemble lui-même une fiche de faits (stations, points, main courante) ;
+    //  2. l'IA ne fait que rédiger à partir de cette fiche, en citant ses sources ;
+    //  3. un humain relit, corrige, valide ; seule la version validée est archivée.
+    //  L'IA est branchée via iaRediger() : pour changer de fournisseur (clé API, relais
+    //  serveur, modèle local), on ne remplace que cette fonction.
+    // =====================================================================
+    {
+      const sit = {
+        section: document.getElementById('sit'),
+        generer: document.getElementById('sit-generer'),
+        brouillon: document.getElementById('sit-brouillon'),
+        attente: document.getElementById('sit-attente'),
+        texte: document.getElementById('sit-texte'),
+        faits: document.getElementById('sit-faits-texte'),
+        valider: document.getElementById('sit-valider'),
+        stop: document.getElementById('sit-stop'),
+        copier: document.getElementById('sit-copier'),
+        abandonner: document.getElementById('sit-abandonner'),
+        erreur: document.getElementById('sit-erreur')
+      };
+      const AGE_MAX_MIN = 60;          // au-delà, une mesure est signalée comme ancienne (spec, règle 5)
+      const ENTREES_MAX = 40;          // dernières entrées de main courante transmises
+      let iaSample = null;             // fonction de rédaction fournie par la plateforme, ou null
+      let controle = null;             // pour arrêter une rédaction en cours
+      let brouillonIA = '';            // texte tel que l'IA l'a rédigé (pour savoir s'il a été corrigé)
+      let modeDuBrouillon = null;      // le brouillon appartient au mode réel ou démo
+      let iaBloquee = false;           // vrai si l'IA est refusée ou indisponible pour cette vue
+
+      // ---------- 1. Fiche de faits, assemblée par le code ----------
+      const m2 = v => metres(Math.round(v * 100) / 100);
+      const tendance = (h, avant) => {
+        const cm = Math.round((h - avant) * 100);
+        return cm > 0 ? 'en hausse de ' + cm + ' cm sur ' + TENDANCE_HEURES + ' h'
+          : cm < 0 ? 'en baisse de ' + (-cm) + ' cm sur ' + TENDANCE_HEURES + ' h'
+          : 'stable sur ' + TENDANCE_HEURES + ' h';
+      };
+      const libelleEtat = e => (ETATS[e] ? ETATS[e].libelle : e).toLowerCase();
+
+      function lignesStations() {
+        const l = [];
+        if (modeDemo && scenario) {
+          for (const st of scenario.stations) {
+            const h = hauteurSimulee(st, tSim);
+            const avant = hauteurSimulee(st, Math.max(0, tSim - TENDANCE_HEURES * 60));
+            const s = SEUILS[st.code];
+            l.push('- ' + st.nom + ' : ' + m2(h) + ', ' + tendance(h, avant) + ', état ' + libelleEtat(etatSimule(st, h))
+              + (s ? ' (seuils de démo : vigilance ' + m2(s.vigilance) + ', alerte ' + m2(s.alerte) + ')' : ' (aucun seuil)')
+              + ' — hauteur simulée');
+          }
+          return l;
+        }
+        if (!derniersResultats.length) return ['- Non disponible : aucune donnée de station chargée (service Hub’Eau injoignable).'];
+        for (const r of derniersResultats) {
+          const nom = r.station.libelle_station || r.station.code_station;
+          if (!r.mesure) { l.push('- ' + nom + ' : pas de mesure disponible.'); continue; }
+          const h = r.mesure.resultat_obs / 1000;
+          const ageMin = Math.round((Date.now() - new Date(r.mesure.date_obs).getTime()) / 60000);
+          const t = r.precedente ? tendance(h, r.precedente.resultat_obs / 1000) : 'tendance non disponible';
+          l.push('- ' + nom + ' : ' + m2(h) + ', ' + t + ', état ' + libelleEtat(r.etat)
+            + (r.seuils ? ' (seuils de démo : vigilance ' + m2(r.seuils.vigilance) + ', alerte ' + m2(r.seuils.alerte) + ')' : ' (aucun seuil)')
+            + ', mesure de ' + heureDeParis(r.mesure.date_obs) + ' (il y a ' + ageMin + ' min)'
+            + (ageMin > AGE_MAX_MIN ? ' — DONNÉE ANCIENNE (plus de ' + AGE_MAX_MIN + ' min)' : ''));
+        }
+        return l;
+      }
+
+      function lignesPoints() {
+        const touches = [], suivis = [];
+        for (const p of tousPoints()) {
+          const e = etatDe(p.id);
+          const statut = p.statut === 'reference' ? 'référencé' : 'ajouté en crise';
+          const type = typePoint(p).libelle + (p.fictif ? ', FICTIF' : '');
+          if (e.statut !== 'normal') {
+            const der = e.historique[e.historique.length - 1];
+            const depuis = der ? ' depuis ' + (der.sim != null ? heureSimulee(der.sim) : dateHeure(der.date))
+              + ' (' + (der.origine === 'auto' ? 'automatique' : 'décision humaine') + ')' : '';
+            touches.push('- ' + p.nom + ' [' + type + ', ' + statut + '] : ' + ETATS_POINT[e.statut].libelle.toUpperCase() + depuis);
+          } else if (p.station_reference && typeof p.hauteur_critique === 'number') {
+            const h = hauteurStation(p.station_reference);
+            suivis.push('- ' + p.nom + ' [' + type + '] : normal ; menacé si ' + nomStation(p.station_reference)
+              + ' atteint ' + m2(p.hauteur_critique) + ' (hauteur critique de démo)'
+              + (h == null ? ', hauteur actuelle non disponible' : ', hauteur actuelle ' + m2(h)));
+          }
+        }
+        return {
+          touches: touches.length ? touches : ['- Aucun point menacé, touché ou évacué.'],
+          suivis: suivis.length ? suivis : ['- Aucun.']
+        };
+      }
+
+      function lignesMainCourante() {
+        if (!entrees.length) return ['- Main courante vide.'];
+        const dernieres = entrees.slice(-ENTREES_MAX);
+        const l = [];
+        if (entrees.length > dernieres.length) l.push('(' + (entrees.length - dernieres.length) + ' entrées plus anciennes non transmises)');
+        for (const e of dernieres) {
+          const type = (MC_TYPES[e.type] || MC_TYPES.information).libelle;
+          const lieu = e.lieu ? (trouverPoint(e.lieu) ? trouverPoint(e.lieu).nom : 'lieu inconnu') : null;
+          const origine = e.scenario ? 'scénario' + (e.source ? ', source : ' + e.source : '')
+            : e.auto ? 'automatique' : e.ia ? 'point de situation validé' : 'saisie humaine';
+          l.push('[#' + e.n + '] ' + heureAffichee(e) + ' · ' + type + ' (' + origine + ')'
+            + (e.corrige ? ' · corrige #' + e.corrige : '') + (lieu ? ' · lieu : ' + lieu : '')
+            + ' · ' + String(e.texte).replace(/\s+/g, ' ').slice(0, 400));
+        }
+        return l;
+      }
+
+      function ficheDeFaits() {
+        const pts = lignesPoints();
+        return [
+          'MODE : ' + (modeDemo ? 'DÉMONSTRATION — scénario de crue FICTIF (exercice)' : 'réel'),
+          'HEURE DU POINT : ' + (modeDemo ? heureSimulee(tSim) + ' (heure simulée)' : dateHeure(new Date().toISOString())),
+          modeDemo ? 'PHASE DU SCÉNARIO : ' + (phaseActuelle() || 'non disponible') : null,
+          '',
+          'STATIONS HYDROMÉTRIQUES (seuils de démo, non officiels) :',
+          ...lignesStations(),
+          '',
+          'POINTS SENSIBLES MENACÉS, TOUCHÉS OU ÉVACUÉS :',
+          ...pts.touches,
+          '',
+          'POINTS SUIVIS ENCORE NORMAUX (seuils de démo, non officiels) :',
+          ...pts.suivis,
+          '',
+          'MAIN COURANTE (de la plus ancienne à la plus récente) :',
+          ...lignesMainCourante()
+        ].filter(x => x !== null).join('\n');
+      }
+
+      // ---------- 2. Consigne : l'IA rédige, elle ne décide pas ----------
+      function consigne(fiche) {
+        return [
+          'Tu rédiges le POINT DE SITUATION d’une cellule de crise inondation à Lyon, en français, pour un directeur de crise.',
+          '',
+          'RÈGLES STRICTES :',
+          '1. Utilise UNIQUEMENT la fiche de faits ci-dessous. N’ajoute aucune connaissance extérieure : aucun chiffre, lieu, acteur, moyen ou événement absent de la fiche.',
+          '2. Après chaque affirmation, cite sa source entre crochets : [#12] pour une entrée de main courante, [station : nom court] pour une mesure, [point : nom] pour l’état d’un point.',
+          '3. Si une information manque pour une rubrique, écris « Non disponible ». N’estime rien.',
+          '4. Ne recommande aucune décision. Dans « Décisions attendues », liste seulement les questions à trancher que les faits font apparaître, sans dire quoi choisir.',
+          '5. « Évolution » : uniquement les tendances observées et les hauteurs critiques proches qui figurent dans la fiche. Écris que ce ne sont pas des prévisions officielles. Aucune prévision inventée.',
+          '6. Signale toute donnée marquée ancienne ou non disponible.',
+          '7. « Prochain point » : seulement si une entrée de la main courante en fixe l’heure ou la fréquence ; sinon « Non disponible ».',
+          modeDemo ? '8. Le mode est DÉMONSTRATION : commence par la ligne « EXERCICE — scénario fictif ».' : null,
+          '',
+          'FORMAT : texte brut, sans Markdown ni astérisques. Ces 5 rubriques, dans cet ordre, chacune sur sa propre ligne en majuscules, suivie de phrases courtes ou de tirets. 250 mots maximum.',
+          'SITUATION',
+          'ÉVOLUTION (TENDANCES OBSERVÉES)',
+          'ACTIONS EN COURS',
+          'DÉCISIONS ATTENDUES',
+          'PROCHAIN POINT',
+          '',
+          'FICHE DE FAITS :',
+          '<<<',
+          fiche,
+          '>>>'
+        ].filter(x => x !== null).join('\n');
+      }
+
+      // ---------- 3. Branchement de l'IA (seul morceau à changer de fournisseur) ----------
+      async function iaRediger(prompt, { onText, signal }) {
+        const { text } = await iaSample(prompt, { onText, signal, cache: false, modelTier: 'default' });
+        return text;
+      }
+
+      const MESSAGES = {
+        not_granted: 'Accès à Claude refusé pour cette page. Rechargez-la pour qu’il vous soit redemandé.',
+        sampling_disabled: 'Claude n’est pas disponible pour ce compte.',
+        rate_limited: 'Trop de demandes ou limite d’usage atteinte : réessayez dans un moment.',
+        session_expired: 'Session expirée : reconnectez-vous à Claude, puis réessayez.',
+        refused: 'L’IA a refusé de rédiger ce point. Vérifiez le contenu de la main courante.',
+        empty_completion: 'L’IA n’a rien rédigé. Réessayez.',
+        prompt_too_large: 'Trop de données à transmettre : réinitialisez une partie de la main courante.'
+      };
+      const INDISPONIBLE = ['not_granted', 'sampling_disabled', 'not_declared', 'capability_disabled', 'capability_removed'];
+
+      function etatBoutons(enCours) {
+        sit.generer.disabled = enCours || iaBloquee;
+        sit.stop.hidden = !enCours;
+        sit.valider.disabled = enCours || !sit.texte.value.trim();
+        sit.copier.disabled = enCours || !sit.texte.value.trim();
+        sit.texte.readOnly = enCours;
+      }
+
+      function fermerBrouillon() {
+        if (controle) controle.abort();
+        controle = null;
+        brouillonIA = '';
+        modeDuBrouillon = null;
+        sit.texte.value = '';
+        sit.attente.textContent = '';
+        sit.erreur.textContent = '';
+        sit.brouillon.hidden = true;
+        etatBoutons(false);
+      }
+
+      sit.generer.addEventListener('click', async () => {
+        if (!iaSample) return;
+        if (controle) controle.abort();
+        const fiche = ficheDeFaits();
+        sit.faits.textContent = fiche;
+        sit.brouillon.hidden = false;
+        sit.texte.value = '';
+        sit.erreur.textContent = '';
+        sit.attente.textContent = 'L’IA lit la fiche de faits et rédige… (jusqu’à une minute)';
+        brouillonIA = '';
+        modeDuBrouillon = modeDemo;
+        const ctl = controle = new AbortController();
+        etatBoutons(true);
+        try {
+          const texte = await iaRediger(consigne(fiche), {
+            signal: ctl.signal,
+            onText: ({ text }) => { sit.attente.textContent = 'Rédaction en cours…'; sit.texte.value = text; }
+          });
+          if (ctl !== controle) return;
+          brouillonIA = texte.trim();
+          sit.texte.value = brouillonIA;
+          sit.attente.textContent = 'Brouillon prêt. Relisez-le, corrigez-le si besoin, puis validez.';
+        } catch (e) {
+          if (ctl !== controle) return;
+          const code = e && e.code;
+          if (code === 'cancelled') {
+            sit.attente.textContent = 'Rédaction arrêtée.';
+            sit.texte.value = (e && e.text) || sit.texte.value;
+          } else {
+            sit.attente.textContent = '';
+            sit.texte.value = (e && e.text) || '';
+            sit.erreur.textContent = MESSAGES[code] || 'L’IA n’a pas pu rédiger le point (problème de service). Réessayez.';
+            if (INDISPONIBLE.includes(code)) iaBloquee = true;   // jamais de nouvel essai automatique
+          }
+          brouillonIA = sit.texte.value.trim();
+        } finally {
+          if (ctl === controle) {
+            controle = null;
+            etatBoutons(false);
+          }
+        }
+      });
+
+      sit.stop.addEventListener('click', () => { if (controle) controle.abort(); });
+      sit.texte.addEventListener('input', () => etatBoutons(false));
+      sit.abandonner.addEventListener('click', fermerBrouillon);
+
+      // Validation humaine : seule la version validée entre dans la main courante
+      sit.valider.addEventListener('click', () => {
+        const texte = sit.texte.value.trim();
+        if (!texte) return;
+        if (modeDuBrouillon !== modeDemo) {
+          sit.erreur.textContent = 'Ce brouillon a été rédigé dans l’autre mode (réel ou démo) : générez-en un nouveau.';
+          return;
+        }
+        ajouterEntree({ type: 'point', texte, ia: { modifie: texte !== brouillonIA } });
+        fermerBrouillon();
+      });
+
+      sit.copier.addEventListener('click', async () => {
+        try {
+          await navigator.clipboard.writeText(sit.texte.value);
+          sit.attente.textContent = 'Texte copié.';
+        } catch (e) {
+          sit.attente.textContent = 'Copie impossible ici : sélectionnez le texte à la main.';
+        }
+      });
+
+      // Changer de mode ou tout réinitialiser abandonne le brouillon en cours
+      for (const id of ['demo-entrer', 'demo-quitter', 'demo-recommencer', 'mc-oui']) {
+        const b = document.getElementById(id);
+        if (b) b.addEventListener('click', fermerBrouillon);
+      }
+
+      // L'IA n'est proposée que si la plateforme en fournit une (page publiée sur Claude).
+      // Sur GitHub Pages, aucune IA n'est branchée : la section reste cachée.
+      (async () => {
+        if (!window.claude || typeof window.claude.use !== 'function') return;
+        try { iaSample = await window.claude.use('sample'); } catch (e) { iaSample = null; }
+        if (typeof iaSample === 'function') sit.section.hidden = false;
+      })();
+    }
   </script>
 </body>
 </html>
