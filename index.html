@@ -47,7 +47,9 @@
       --orange: #ef6c00;
       --rouge: #c62828;
       --gris: #8a94a3;
+      --entete: 48px;          /* hauteur des bandeaux fixes en haut */
     }
+    body.demo { --entete: 92px; }   /* + bandeau orange DÉMO */
     html, body {
       margin: 0;
       height: 100%;
@@ -85,7 +87,7 @@
     /* Mise en page sous le bandeau : carte (60 %) à gauche, main courante à droite */
     #espace {
       position: fixed;
-      top: 48px; left: 0; right: 0; bottom: 0;
+      top: var(--entete); left: 0; right: 0; bottom: 0;
       display: flex;
     }
     #zone-carte {
@@ -99,7 +101,7 @@
     /* Sur téléphone (écran étroit) : la page défile normalement,
        la carte en haut, puis la main courante en entier en dessous */
     @media (max-width: 767px) {
-      #espace { position: static; display: block; padding-top: 48px; }
+      #espace { position: static; display: block; padding-top: var(--entete); }
       #zone-carte { height: 55vh; height: 55svh; }
     }
     /* Message d'erreur affiché par-dessus la carte si l'API ne répond pas */
@@ -359,7 +361,7 @@
     #zone-carte.placement .leaflet-interactive,
     #zone-carte.placement .leaflet-popup-pane { pointer-events: none !important; }
     /* Sur téléphone : quand on revient à la carte, elle n'est pas cachée par le bandeau */
-    #zone-carte { scroll-margin-top: 48px; }
+    #zone-carte { scroll-margin-top: var(--entete); }
     /* Fenêtre de création d'un point : en bas à gauche, sur la carte (ordinateur) */
     #ps-formulaire {
       position: absolute;
@@ -395,12 +397,80 @@
       width: 30px; height: 30px;
       box-sizing: border-box;
       border-radius: 50%;
-      background: #fff;
-      border: 2px solid #1b2430;
-      box-shadow: 0 1px 4px rgba(0,0,0,.4);
-      font-size: 16px; line-height: 1;
+      background: #5d6b7c;           /* remplacé par la couleur de la famille */
+      border: 2px solid #fff;        /* « Référencé (préparation) » : bordure sobre */
+      box-shadow: 0 0 0 1px rgba(0,0,0,.35), 0 1px 4px rgba(0,0,0,.4);
+      font-size: 15px; line-height: 1;
     }
-    .ps-icone.provisoire { border-style: dashed; opacity: .85; }
+    /* « Ajouté en crise » : bordure orange épaisse */
+    .ps-icone.crise { border: 3px solid var(--orange); box-shadow: 0 0 0 1px #fff, 0 1px 4px rgba(0,0,0,.45); }
+    .ps-icone.provisoire { border: 3px dashed var(--orange); opacity: .85; }
+    /* Statut dans la fenêtre d'un point */
+    .statut { display: inline-block; margin: 2px 0 4px; font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 10px; }
+    .statut.reference { background: #e8ecf1; color: #1b2430; border: 1px solid #c5ccd6; }
+    .statut.crise { background: var(--orange); color: #fff; }
+    .bulle .a-verifier { color: #8a4b00; font-size: 13px; }
+    /* Légende : exemples de bordure des points */
+    .legende .anneau { width: 12px; height: 12px; border-radius: 50%; background: #5d6b7c; border: 2px solid #fff; box-shadow: 0 0 0 1px rgba(0,0,0,.35); flex: none; box-sizing: border-box; }
+    .legende .anneau.crise { border: 3px solid var(--orange); box-shadow: none; }
+    @media (max-width: 767px) { .legende .anneau { width: 11px; height: 11px; } }
+
+    /* ---------- Mode démo ---------- */
+    #demo-entrer {
+      flex: none;
+      font: inherit; font-size: 13px; font-weight: 600;
+      padding: 4px 10px;
+      border: 1px solid #f0a35a; border-radius: 4px;
+      background: transparent; color: #ffcc99;
+      cursor: pointer;
+    }
+    #demo-entrer:disabled { opacity: .6; cursor: wait; }
+    #demo-barre {
+      position: fixed;
+      top: 48px; left: 0; right: 0;
+      height: 44px;
+      box-sizing: border-box;
+      z-index: 2000;
+      display: flex; align-items: center; gap: 6px;
+      padding: 0 max(12px, env(safe-area-inset-right, 0px)) 0 max(12px, env(safe-area-inset-left, 0px));
+      background: #f57c00;
+      color: #1b1300;
+      box-shadow: 0 2px 6px rgba(0,0,0,.3);
+      white-space: nowrap;
+    }
+    .demo-etiquette {
+      font-weight: 800; letter-spacing: .08em; font-size: 14px;
+      padding: 3px 8px; border-radius: 4px;
+      background: #1b2430; color: #ffb74d;
+    }
+    #demo-horloge { font-size: 17px; font-weight: 700; font-variant-numeric: tabular-nums; }
+    #demo-phase { font-size: 13px; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+    .texte-court { display: none; }
+    @media (max-width: 420px) {
+      #demo-phase { display: none; }
+      #demo-barre { gap: 5px; }
+      .texte-long { display: none; }
+      .texte-court { display: inline; }
+      .demo-btn { min-width: 32px; padding: 0 6px; }
+      #demo-horloge { font-size: 16px; }
+    }
+    .demo-btn {
+      font: inherit; font-size: 14px; font-weight: 600;
+      min-width: 36px; height: 32px; padding: 0 8px;
+      border: 1px solid rgba(0,0,0,.25); border-radius: 4px;
+      background: #fff; color: #1b2430; cursor: pointer;
+    }
+    #demo-quitter { margin-left: auto; }
+    .demo-btn:focus-visible, #demo-entrer:focus-visible { outline: 2px solid #1d4ed8; outline-offset: 2px; }
+    /* Marques « démo » et « scénario » dans la main courante */
+    .mc-marque {
+      font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
+      padding: 0 6px; border-radius: 8px;
+      background: #ffe0b2; color: #7a3d00;
+    }
+    .mc-marque.scenario { background: #e0e7ff; color: #312e81; }
+    .mc-source { margin-top: 4px; font-size: 12px; color: var(--mc-discret); }
+    #app-avertissement { font-size: 13px; color: #8a4b00; padding: 8px 16px; background: #fff4e5; }
     /* Sur téléphone : la fenêtre de création s'insère juste sous la carte, comme un bloc de la page.
        Posée sur la carte, elle passait sous le bandeau à l'ouverture du clavier de l'iPhone. */
     @media (max-width: 767px) {
@@ -415,11 +485,23 @@
       }
     }
     /* Un champ qui reçoit le clavier ne s'arrête jamais sous le bandeau */
-    input, select, textarea { scroll-margin-top: 64px; }
+    input, select, textarea { scroll-margin-top: calc(var(--entete) + 16px); }
   </style>
 </head>
 <body>
-  <header id="bandeau">Métis — Lyon <span id="etat">Chargement des stations…</span></header>
+  <header id="bandeau">Métis — Lyon <span id="etat">Chargement des stations…</span>
+    <button type="button" id="demo-entrer">Mode démo</button>
+  </header>
+  <!-- Bandeau du mode démo : horloge simulée et commandes de lecture -->
+  <div id="demo-barre" hidden role="region" aria-label="Mode démo">
+    <span class="demo-etiquette">DÉMO</span>
+    <span id="demo-horloge" aria-live="off">J+0 06:00</span>
+    <span id="demo-phase"></span>
+    <button type="button" class="demo-btn" id="demo-lecture" aria-label="Pause">⏸</button>
+    <button type="button" class="demo-btn" id="demo-vitesse" aria-label="Changer la vitesse">×1</button>
+    <button type="button" class="demo-btn" id="demo-recommencer" aria-label="Recommencer la démo depuis le début">⟲</button>
+    <button type="button" class="demo-btn" id="demo-quitter" aria-label="Quitter la démo"><span class="texte-long">Quitter la démo</span><span class="texte-court">Quitter</span></button>
+  </div>
   <div id="espace">
     <div id="zone-carte">
       <div id="carte"></div>
@@ -473,6 +555,7 @@
         </div>
       </form>
       <div id="mc-avertissement" hidden></div>
+      <div id="app-avertissement" hidden></div>
       <ol id="mc-liste" aria-live="polite"></ol>
       <div id="mc-pied">
         <span>Entrées non modifiables. Pour corriger : « Corriger ».</span>
@@ -487,6 +570,9 @@
   </div>
 
   <script>
+    // Vrai pendant le mode démo (déclaré ici : le chargement des stations le consulte)
+    let modeDemo = false;
+
     // Carte centrée sur Lyon, zoom 12
     const carte = L.map('carte').setView([45.764, 4.836], 12);
 
@@ -513,14 +599,20 @@
         [ETATS.normal.hexa, 'Normal'],
         [ETATS.vigilance.hexa, 'Vigilance'],
         [ETATS.alerte.hexa, 'Alerte'],
-        [ETATS.inconnu.hexa, 'Pas de mesure récente']
+        [ETATS.inconnu.hexa, 'Pas de mesure récente'],
+        ['anneau', 'Point référencé'],
+        ['anneau crise', 'Point ajouté en crise']
       ];
       for (const [couleur, texte] of lignes) {
         const ligne = document.createElement('div');
         ligne.className = 'ligne';
         const rond = document.createElement('span');
-        rond.className = 'rond';
-        rond.style.background = couleur;
+        if (couleur.startsWith('anneau')) {
+          rond.className = couleur;
+        } else {
+          rond.className = 'rond';
+          rond.style.background = couleur;
+        }
         ligne.append(rond, document.createTextNode(texte));
         div.appendChild(ligne);
       }
@@ -655,6 +747,7 @@
     }
 
     function afficherErreur(texte) {
+      if (modeDemo) return;   // en démo, on ne parle pas de Hub'Eau
       message.textContent = '';
       const p = document.createElement('div');
       p.textContent = texte;
@@ -687,10 +780,13 @@
       return r;
     }
 
+    // Écrit dans le bandeau, sauf en démo (le bandeau montre alors l'état simulé)
+    function ecrireEtat(texte) { if (!modeDemo) etat.textContent = texte; }
+
     async function chargerStations() {
       message.hidden = true;
       calqueStations.clearLayers();
-      etat.textContent = 'Chargement des stations…';
+      ecrireEtat('Chargement des stations…');
 
       // 1. Liste des stations en service dans la zone
       let stations;
@@ -700,13 +796,13 @@
           + '&fields=code_station,libelle_station,libelle_cours_eau,longitude_station,latitude_station');
         stations = (reponse.data || []).filter(s => s.longitude_station != null && s.latitude_station != null);
       } catch (e) {
-        etat.textContent = 'Stations indisponibles';
+        ecrireEtat('Stations indisponibles');
         afficherErreur('Les stations hydrométriques n’ont pas pu être chargées : le service Hub’Eau ne répond pas. '
           + 'La carte reste utilisable. Réessayez dans quelques minutes.');
         return;
       }
       if (stations.length === 0) {
-        etat.textContent = 'Aucune station';
+        ecrireEtat('Aucune station');
         afficherErreur('Hub’Eau ne signale aucune station hydrométrique en service dans la zone.');
         return;
       }
@@ -735,7 +831,7 @@
       if (compte('alerte')) morceaux.push(compte('alerte') + ' alerte');
       if (compte('vigilance')) morceaux.push(compte('vigilance') + ' vigilance');
       if (!compte('alerte') && !compte('vigilance')) morceaux.push(compte('normal') + ' normales');
-      etat.textContent = morceaux.join(' · ');
+      ecrireEtat(morceaux.join(' · '));
 
       if (resultats.every(r => r.erreur)) {
         afficherErreur('Les stations sont affichées, mais les hauteurs d’eau n’ont pas pu être chargées : '
@@ -752,8 +848,16 @@
     //  - chaque entrée : numéro, type, texte, date et heure (automatiques)
     //  - aucune modification ni suppression : on corrige par une nouvelle entrée
     //  - conservée dans ce navigateur (localStorage), donc après rechargement
+    //  - le mode démo a SA PROPRE main courante (clé de stockage séparée)
     // =====================================================================
     const MC_CLE = 'metis.mainCourante.v1';
+    const PS_CLE = 'metis.pointsSensibles.v1';
+    const DEMO_MC_CLE = 'metis.demo.mainCourante.v1';
+    const DEMO_PS_CLE = 'metis.demo.pointsSensibles.v1';
+    // La clé utilisée dépend du mode : réel ou démo (jamais mélangés)
+    const cleMC = () => (modeDemo ? DEMO_MC_CLE : MC_CLE);
+    const clePS = () => (modeDemo ? DEMO_PS_CLE : PS_CLE);
+
     const MC_TYPES = {
       evenement:   { libelle: 'Événement',    icone: '⚠', couleur: 'var(--type-evenement)' },
       decision:    { libelle: 'Décision',     icone: '✔', couleur: 'var(--type-decision)' },
@@ -769,6 +873,7 @@
       liste: document.getElementById('mc-liste'),
       compte: document.getElementById('mc-compte'),
       avertissement: document.getElementById('mc-avertissement'),
+      appAvertissement: document.getElementById('app-avertissement'),
       correction: document.getElementById('mc-correction'),
       correctionTexte: document.getElementById('mc-correction-texte'),
       lieu: document.getElementById('mc-lieu'),
@@ -782,7 +887,7 @@
 
     function lireStockage() {
       try {
-        const brut = localStorage.getItem(MC_CLE);
+        const brut = localStorage.getItem(cleMC());
         const donnees = brut ? JSON.parse(brut) : [];
         return Array.isArray(donnees) ? donnees : [];
       } catch (e) {
@@ -793,7 +898,7 @@
 
     function ecrireStockage() {
       try {
-        localStorage.setItem(MC_CLE, JSON.stringify(entrees));
+        localStorage.setItem(cleMC(), JSON.stringify(entrees));
         stockageOk = true;
       } catch (e) {
         stockageOk = false;
@@ -805,6 +910,12 @@
       }
     }
 
+    // Message d'information dans le panneau (fichier non chargé, etc.)
+    function avertir(texte) {
+      mc.appAvertissement.textContent = texte;
+      mc.appAvertissement.hidden = false;
+    }
+
     function dateHeure(iso) {
       // Toujours à l'heure de Paris, comme les mesures des stations
       return new Date(iso).toLocaleString('fr-FR', {
@@ -814,6 +925,11 @@
       });
     }
 
+    // Heure affichée d'une entrée ou d'un point : simulée en démo (« J+1 14:30 »), réelle sinon
+    function heureAffichee(objet) {
+      return objet.sim != null ? heureSimulee(objet.sim) : dateHeure(objet.date);
+    }
+
     // Affiche la liste, les plus récentes en haut
     function afficherEntrees() {
       mc.liste.textContent = '';
@@ -821,7 +937,9 @@
       if (entrees.length === 0) {
         const vide = document.createElement('li');
         vide.id = 'mc-vide';
-        vide.textContent = 'Aucune entrée pour l’instant. Choisissez un type, écrivez, puis « Ajouter ».';
+        vide.textContent = modeDemo
+          ? 'Main courante de démo vide. Les informations du scénario arrivent au fil de l’horloge simulée.'
+          : 'Aucune entrée pour l’instant. Choisissez un type, écrivez, puis « Ajouter ».';
         mc.liste.appendChild(vide);
         return;
       }
@@ -846,12 +964,20 @@
         const heure = document.createElement('time');
         heure.className = 'mc-heure';
         heure.dateTime = e.date;
-        heure.textContent = dateHeure(e.date);
+        heure.textContent = heureAffichee(e);
+        entete.append(numero, badge);
+        // Marque « scénario » (ajoutée automatiquement par la démo) ou « démo » (saisie pendant la démo)
+        if (e.scenario || e.demo) {
+          const marque = document.createElement('span');
+          marque.className = 'mc-marque' + (e.scenario ? ' scenario' : '');
+          marque.textContent = e.scenario ? 'scénario' : 'démo';
+          entete.appendChild(marque);
+        }
         const corriger = document.createElement('button');
         corriger.type = 'button';
         corriger.textContent = 'Corriger';
         corriger.addEventListener('click', () => commencerCorrection(e.n));
-        entete.append(numero, badge, heure, corriger);
+        entete.append(heure, corriger);
         li.appendChild(entete);
 
         if (e.corrige) {
@@ -865,9 +991,16 @@
         texte.textContent = e.texte;
         li.appendChild(texte);
 
+        if (e.source) {
+          const source = document.createElement('div');
+          source.className = 'mc-source';
+          source.textContent = 'Source : ' + e.source;
+          li.appendChild(source);
+        }
+
         // Lieu lié : « 📍 nom », qu'on touche pour voir le point sur la carte
         if (e.lieu) {
-          const p = points.find(x => x.id === e.lieu);
+          const p = trouverPoint(e.lieu);
           const lieu = document.createElement(p ? 'button' : 'span');
           lieu.className = 'mc-lieu';
           lieu.textContent = '📍 ' + (p ? p.nom : 'lieu inconnu');
@@ -896,7 +1029,7 @@
       const origine = entrees.find(e => e.n === n);
       if (origine) {
         mc.type.value = origine.type;
-        mc.lieu.value = origine.lieu && points.some(p => p.id === origine.lieu) ? origine.lieu : '';
+        mc.lieu.value = origine.lieu && trouverPoint(origine.lieu) ? origine.lieu : '';
       }
       mc.texte.focus();
     }
@@ -921,8 +1054,8 @@
       annulerCorrection();
     });
 
-    // Ajoute une entrée (depuis le formulaire, ou automatiquement à la création d'un point)
-    function ajouterEntree({ type, texte, corrige, lieu }) {
+    // Ajoute une entrée (formulaire, création d'un point, ou information du scénario de démo)
+    function ajouterEntree({ type, texte, corrige, lieu, scenario }) {
       // On relit le stockage juste avant d'ajouter (au cas où un autre onglet aurait écrit entre-temps)
       const enStock = lireStockage();
       if (enStock.length > entrees.length) entrees = enStock;
@@ -930,10 +1063,22 @@
         n: entrees.reduce((max, e) => Math.max(max, e.n), 0) + 1,
         type,
         texte,
-        date: new Date().toISOString()
+        date: new Date().toISOString()   // heure réelle de saisie, toujours conservée
       };
       if (corrige) entree.corrige = corrige;
       if (lieu) entree.lieu = lieu;
+      if (modeDemo) {
+        if (scenario) {
+          // Information du scénario : heure simulée prévue, source, marque « scénario »
+          entree.sim = scenario.t_h * 60;
+          entree.scenario = scenario.id;
+          entree.source = scenario.source;
+        } else {
+          // Saisie pendant la démo : heure simulée du moment, marque « démo »
+          entree.sim = Math.floor(tSim);
+          entree.demo = true;
+        }
+      }
       entrees.push(Object.freeze(entree));
       ecrireStockage();
       afficherEntrees();
@@ -951,13 +1096,15 @@
 
     document.getElementById('mc-correction-annuler').addEventListener('click', annulerCorrection);
 
-    // Réinitialisation (démo) : demande une confirmation dans la page avant d'effacer
+    // Réinitialisation (démo) : demande une confirmation dans la page avant d'effacer.
+    // N'efface jamais les points référencés (ils viennent du fichier referentiel-points.json).
     mc.reinit.addEventListener('click', () => {
       const vide = entrees.length === 0 && points.length === 0;
       mc.confirmationTexte.textContent = vide
         ? 'La main courante est déjà vide.'
         : 'Effacer définitivement les ' + entrees.length + ' entrées de la main courante'
-          + (points.length ? ' et les ' + points.length + ' points sensibles' : '') + ' ?';
+          + (points.length ? ' et les ' + points.length + ' points ajoutés en crise' : '')
+          + ' ? Les points référencés sont conservés.';
       document.getElementById('mc-oui').hidden = vide;
       mc.confirmation.hidden = false;
     });
@@ -965,8 +1112,8 @@
     document.getElementById('mc-oui').addEventListener('click', () => {
       entrees = [];
       points = [];
-      try { localStorage.removeItem(MC_CLE); } catch (e) { /* rien à faire */ }
-      try { localStorage.removeItem(PS_CLE); } catch (e) { /* rien à faire */ }
+      try { localStorage.removeItem(cleMC()); } catch (e) { /* rien à faire */ }
+      try { localStorage.removeItem(clePS()); } catch (e) { /* rien à faire */ }
       mc.confirmation.hidden = true;
       annulerCorrection();
       arreterPlacement();
@@ -977,23 +1124,42 @@
 
     // Si la main courante ou les points changent dans un autre onglet du même navigateur, on se met à jour
     window.addEventListener('storage', ev => {
-      if (ev.key === MC_CLE) { entrees = lireStockage(); afficherEntrees(); }
-      if (ev.key === PS_CLE) { points = lirePoints(); afficherPoints(); afficherEntrees(); }
+      if (ev.key === cleMC()) { entrees = lireStockage(); afficherEntrees(); }
+      if (ev.key === clePS()) { points = lirePoints(); afficherPoints(); afficherEntrees(); }
     });
 
     // =====================================================================
-    //  POINTS SENSIBLES
-    //  - « + Point sensible », puis un toucher sur la carte place le point
-    //  - nom + type (Hôpital, École, Poste électrique, Autre)
-    //  - conservés dans ce navigateur, effacés par « Réinitialiser (démo) »
-    //  - chaque création ajoute une entrée « Information » à la main courante
+    //  POINTS
+    //  Deux statuts :
+    //  - « Référencé (préparation) » : chargés depuis referentiel-points.json,
+    //    bordure sobre, aucune entrée en main courante, jamais effacés
+    //  - « Ajouté en crise » : « + Point sensible » puis un toucher sur la carte,
+    //    bordure orange, entrée « Information » automatique, effacés par « Réinitialiser (démo) »
     // =====================================================================
-    const PS_CLE = 'metis.pointsSensibles.v1';
+    const PS_FAMILLES = {
+      gestion:    { libelle: 'Gestion de crise',          couleur: '#1d4ed8' },
+      evacuation: { libelle: 'Évacuation difficile',      couleur: '#be185d' },
+      reseaux:    { libelle: 'Réseaux',                   couleur: '#0f766e' },
+      aggravant:  { libelle: 'Installations aggravantes', couleur: '#7c2d12' },
+      autre:      { libelle: 'Autre',                     couleur: '#5d6b7c' }
+    };
+    // Les clés « hopital », « ecole », « poste » et « autre » sont celles de l'étape 5 :
+    // les points déjà enregistrés gardent donc leur type.
     const PS_TYPES = {
-      hopital: { libelle: 'Hôpital',          icone: '🏥' },
-      ecole:   { libelle: 'École',            icone: '🏫' },
-      poste:   { libelle: 'Poste électrique', icone: '⚡' },
-      autre:   { libelle: 'Autre',            icone: '📌' }
+      caserne:    { libelle: 'Caserne de pompiers',          icone: '🚒', famille: 'gestion' },
+      police:     { libelle: 'Commissariat / gendarmerie',   icone: '🚓', famille: 'gestion' },
+      mairie:     { libelle: 'Mairie',                       icone: '🏛️', famille: 'gestion' },
+      prefecture: { libelle: 'Préfecture',                   icone: '🏢', famille: 'gestion' },
+      hopital:    { libelle: 'Hôpital',                      icone: '🏥', famille: 'evacuation' },
+      ecole:      { libelle: 'École / crèche',               icone: '🏫', famille: 'evacuation' },
+      retraite:   { libelle: 'Maison de retraite',           icone: '🧓', famille: 'evacuation' },
+      pont:       { libelle: 'Pont',                         icone: '🌉', famille: 'reseaux' },
+      gare:       { libelle: 'Gare',                         icone: '🚉', famille: 'reseaux' },
+      route:      { libelle: 'Axe routier',                  icone: '🛣️', famille: 'reseaux' },
+      poste:      { libelle: 'Poste électrique',             icone: '⚡', famille: 'aggravant' },
+      eau:        { libelle: 'Eau potable',                  icone: '💧', famille: 'aggravant' },
+      industriel: { libelle: 'Site industriel',              icone: '🏭', famille: 'aggravant' },
+      autre:      { libelle: 'Autre',                        icone: '📌', famille: 'autre' }
     };
     const ps = {
       zone: document.getElementById('zone-carte'),
@@ -1003,23 +1169,35 @@
       erreur: document.getElementById('ps-erreur'),
       annuler: document.getElementById('ps-annuler')
     };
-    let points = [];                       // les points, du plus ancien au plus récent
+    let referentiel = [];                  // points référencés (fichier), identiques en réel et en démo
+    let points = [];                       // points ajoutés en crise, du plus ancien au plus récent
     const marqueursPoints = {};            // identifiant du point → son marqueur sur la carte
     const calquePoints = L.layerGroup().addTo(carte);
     let placementActif = false;            // vrai entre « + Point sensible » et le toucher sur la carte
     let positionProvisoire = null;         // endroit touché, en attente du nom
     let marqueurProvisoire = null;
 
+    const tousPoints = () => referentiel.concat(points);
+    const trouverPoint = id => tousPoints().find(p => p.id === id);
+
     // Le type est à choisir à chaque création (pas de type par défaut : évite un point créé avec le mauvais type)
     ps.type.add(new Option('— Choisir un type —', ''));
     ps.type.options[0].disabled = true;
-    for (const [cle, t] of Object.entries(PS_TYPES)) ps.type.add(new Option(t.icone + ' ' + t.libelle, cle));
+    for (const [cleFamille, famille] of Object.entries(PS_FAMILLES)) {
+      const groupe = document.createElement('optgroup');
+      groupe.label = famille.libelle;
+      for (const [cle, t] of Object.entries(PS_TYPES)) {
+        if (t.famille === cleFamille) groupe.appendChild(new Option(t.icone + ' ' + t.libelle, cle));
+      }
+      ps.type.appendChild(groupe);
+    }
 
     function typePoint(p) { return PS_TYPES[p.type] || PS_TYPES.autre; }
+    function famillePoint(p) { return PS_FAMILLES[typePoint(p).famille]; }
 
     function lirePoints() {
       try {
-        const brut = localStorage.getItem(PS_CLE);
+        const brut = localStorage.getItem(clePS());
         const donnees = brut ? JSON.parse(brut) : [];
         return Array.isArray(donnees) ? donnees : [];
       } catch (e) {
@@ -1028,24 +1206,27 @@
     }
 
     function ecrirePoints() {
-      try { localStorage.setItem(PS_CLE, JSON.stringify(points)); } catch (e) { stockageOk = false; }
+      try { localStorage.setItem(clePS(), JSON.stringify(points)); } catch (e) { stockageOk = false; }
     }
 
-    // Icône ronde avec l'emoji du type (le HTML ne contient que nos propres emojis, jamais le texte saisi)
-    function iconePoint(type, provisoire) {
+    // Icône ronde : couleur de la famille, emoji du type, bordure selon le statut.
+    // Le HTML ne contient que nos propres emojis et couleurs, jamais le texte saisi.
+    function iconePoint(type, statut) {
       const t = PS_TYPES[type] || PS_TYPES.autre;
+      const couleur = type ? PS_FAMILLES[t.famille].couleur : '#ffffff';
       return L.divIcon({
         className: '',
-        html: '<div class="ps-icone' + (provisoire ? ' provisoire' : '') + '">' + t.icone + '</div>',
+        html: '<div class="ps-icone ' + statut + '" style="background:' + couleur + '">' + (type ? t.icone : '') + '</div>',
         iconSize: [30, 30],
         iconAnchor: [15, 15],
         popupAnchor: [0, -15]
       });
     }
 
-    // Fenêtre d'un point : nom, type, date d'ajout, numéros des entrées liées
+    // Fenêtre d'un point : nom, statut, famille, type, puis détails et entrées liées
     function bullePoint(p) {
       const t = typePoint(p);
+      const reference = p.statut === 'reference';
       const div = document.createElement('div');
       div.className = 'bulle';
       const ajouter = (balise, texte, classe) => {
@@ -1053,21 +1234,38 @@
         el.textContent = texte;
         if (classe) el.className = classe;
         div.appendChild(el);
+        return el;
       };
       ajouter('h3', t.icone + ' ' + p.nom);
+      ajouter('span', reference ? 'Référencé (préparation)' : 'Ajouté en crise', 'statut ' + (reference ? 'reference' : 'crise'));
+      ajouter('p', 'Famille : ' + famillePoint(p).libelle);
       ajouter('p', 'Type : ' + t.libelle);
-      ajouter('p', 'Ajouté le ' + dateHeure(p.date));
+      if (reference) {
+        if (p.adresse) ajouter('p', 'Adresse : ' + p.adresse);
+        if (p.fictif) ajouter('p', 'Lieu fictif : nom et emplacement inventés pour la démonstration.', 'a-verifier');
+        else if (p.a_verifier) ajouter('p', 'Position à vérifier.', 'a-verifier');
+      } else {
+        ajouter('p', p.sim != null
+          ? 'Ajouté à ' + heureSimulee(p.sim) + ' (heure simulée)'
+          : 'Ajouté le ' + dateHeure(p.date));
+        if (p.demo) ajouter('p', 'Saisie pendant la démo.', 'gris');
+      }
       const liees = entrees.filter(e => e.lieu === p.id).map(e => '#' + e.n);
       ajouter('p', 'Entrées liées : ' + (liees.length ? liees.join(', ') : 'aucune'));
-      ajouter('p', 'Point sensible ' + p.id, 'gris');
+      ajouter('p', 'Point ' + p.id, 'gris');
       return div;
     }
 
     function afficherPoints() {
       calquePoints.clearLayers();
       for (const id in marqueursPoints) delete marqueursPoints[id];
-      for (const p of points) {
-        marqueursPoints[p.id] = L.marker([p.lat, p.lng], { icon: iconePoint(p.type), title: p.nom, zIndexOffset: 500 })
+      for (const p of tousPoints()) {
+        const reference = p.statut === 'reference';
+        marqueursPoints[p.id] = L.marker([p.lat, p.lng], {
+          icon: iconePoint(p.type, reference ? 'reference' : 'crise'),
+          title: p.nom,
+          zIndexOffset: reference ? 400 : 500   // les points ajoutés en crise passent au-dessus
+        })
           // contenu recalculé à chaque ouverture ; la fenêtre s'ouvre sous le bouton « + Point sensible »
           .bindPopup(() => bullePoint(p), { autoPanPaddingTopLeft: L.point(10, 70), autoPanPaddingBottomRight: L.point(10, 10) })
           .addTo(calquePoints);
@@ -1075,14 +1273,22 @@
       remplirMenuLieu();
     }
 
-    // Menu « Lieu » du formulaire de la main courante
+    // Menu « Lieu » du formulaire de la main courante : points référencés, puis points ajoutés en crise
     function remplirMenuLieu() {
       const choix = mc.lieu.value;
       mc.lieu.textContent = '';
-      mc.lieu.add(new Option(points.length ? '— Aucun (optionnel) —' : '— Aucun point sensible —', ''));
-      for (const p of points) mc.lieu.add(new Option(typePoint(p).icone + ' ' + p.nom, p.id));
-      mc.lieu.value = points.some(p => p.id === choix) ? choix : '';
-      mc.lieu.disabled = points.length === 0;
+      const total = tousPoints().length;
+      mc.lieu.add(new Option(total ? '— Aucun (optionnel) —' : '— Aucun point —', ''));
+      const groupes = [['Points référencés', referentiel], ['Ajoutés en crise', points]];
+      for (const [titre, liste] of groupes) {
+        if (!liste.length) continue;
+        const groupe = document.createElement('optgroup');
+        groupe.label = titre;
+        for (const p of liste) groupe.appendChild(new Option(typePoint(p).icone + ' ' + p.nom, p.id));
+        mc.lieu.appendChild(groupe);
+      }
+      mc.lieu.value = trouverPoint(choix) ? choix : '';
+      mc.lieu.disabled = total === 0;
     }
 
     // Depuis une entrée : on revient à la carte, centrée sur le point, fenêtre ouverte
@@ -1092,6 +1298,24 @@
       ps.zone.scrollIntoView({ behavior: 'smooth', block: 'start' });  // sur téléphone, la carte est plus haut
       carte.setView(m.getLatLng(), Math.max(carte.getZoom(), 15));
       m.openPopup();
+    }
+
+    // Points référencés : fichier referentiel-points.json, à côté de index.html
+    async function chargerReferentiel() {
+      try {
+        const reponse = await fetch('referentiel-points.json', { cache: 'no-cache' });
+        if (!reponse.ok) throw new Error('code ' + reponse.status);
+        const donnees = await reponse.json();
+        referentiel = (donnees.points || [])
+          .filter(p => p && p.id && p.nom && typeof p.lat === 'number' && typeof p.lng === 'number')
+          .map(p => Object.freeze({ ...p, type: PS_TYPES[p.type] ? p.type : 'autre', statut: 'reference' }));
+      } catch (e) {
+        referentiel = [];
+        avertir('Points référencés indisponibles : le fichier referentiel-points.json n’a pas pu être chargé. '
+          + 'Les points ajoutés en crise restent utilisables.');
+      }
+      afficherPoints();
+      afficherEntrees();   // les entrées liées à un point référencé affichent alors son nom
     }
 
     // Bouton « + Point sensible », en haut à droite de la carte
@@ -1146,7 +1370,7 @@
 
     function ouvrirCreation(latlng) {
       positionProvisoire = latlng;
-      marqueurProvisoire = L.marker(latlng, { icon: iconePoint(ps.type.value, true), interactive: false }).addTo(carte);
+      marqueurProvisoire = L.marker(latlng, { icon: iconePoint('', 'provisoire'), interactive: false }).addTo(carte);
       ps.nom.value = '';
       ps.type.value = '';
       ps.erreur.textContent = '';
@@ -1162,13 +1386,14 @@
     // Écran tactile (téléphone, tablette) : le clavier ne s'ouvre que quand on touche un champ
     const ECRAN_TACTILE = window.matchMedia('(pointer: coarse)').matches;
 
-    // iPhone : à l'ouverture du clavier, la page peut défiler et laisser le champ sous le bandeau fixe.
+    // iPhone : à l'ouverture du clavier, la page peut défiler et laisser le champ sous les bandeaux fixes.
     // On attend la fin de l'animation du clavier, puis on redescend la page si besoin.
     document.addEventListener('focusin', ev => {
       const champ = ev.target;
       if (!champ.matches || !champ.matches('input, select, textarea')) return;
       setTimeout(() => {
-        const basBandeau = document.getElementById('bandeau').getBoundingClientRect().bottom;
+        const entete = modeDemo ? document.getElementById('demo-barre') : document.getElementById('bandeau');
+        const basBandeau = entete.getBoundingClientRect().bottom;
         const haut = champ.getBoundingClientRect().top;
         if (haut < basBandeau + 8) window.scrollBy({ top: haut - basBandeau - 16, behavior: 'smooth' });
       }, 400);
@@ -1182,7 +1407,7 @@
     }
 
     ps.type.addEventListener('change', () => {
-      if (marqueurProvisoire) marqueurProvisoire.setIcon(iconePoint(ps.type.value, true));
+      if (marqueurProvisoire) marqueurProvisoire.setIcon(iconePoint(ps.type.value, 'provisoire'));
     });
     ps.annuler.addEventListener('click', annulerCreation);
 
@@ -1204,15 +1429,16 @@
       const enStock = lirePoints();
       if (enStock.length > points.length) points = enStock;
       const n = points.reduce((max, p) => Math.max(max, Number(String(p.id).slice(1)) || 0), 0) + 1;
-      const point = Object.freeze({
+      const point = {
         id: 'P' + n,
         nom,
         type: ps.type.value,
         lat: Math.round(positionProvisoire.lat * 1e6) / 1e6,
         lng: Math.round(positionProvisoire.lng * 1e6) / 1e6,
         date: new Date().toISOString()
-      });
-      points.push(point);
+      };
+      if (modeDemo) { point.sim = Math.floor(tSim); point.demo = true; }
+      points.push(Object.freeze(point));
       ecrirePoints();
       annulerCreation();
       afficherPoints();
@@ -1227,12 +1453,272 @@
       if (!ps.formulaire.hidden) annulerCreation();
     });
 
-    // Démarrage
+    // =====================================================================
+    //  MODE DÉMO
+    //  - scénario de crue fictif (scenario-demo.json) : hauteurs simulées, informations datées
+    //  - horloge simulée « J+1 14:30 » ; 48 h simulées en 3 minutes par défaut
+    //  - main courante et points ajoutés de la démo : stockage séparé, remis à zéro à chaque lecture
+    //  - les vraies données (Hub'Eau, main courante réelle) ne sont jamais touchées
+    // =====================================================================
+    const DEMO_DUREE_REELLE_S = 180;              // durée réelle d'une lecture complète à vitesse ×1
+    const VITESSES = [1, 2, 4, 0.5];
+    const LIBELLES_VITESSE = ['×1', '×2', '×4', '×½'];
+    const demo = {
+      entrer: document.getElementById('demo-entrer'),
+      barre: document.getElementById('demo-barre'),
+      horloge: document.getElementById('demo-horloge'),
+      phase: document.getElementById('demo-phase'),
+      lecture: document.getElementById('demo-lecture'),
+      vitesse: document.getElementById('demo-vitesse'),
+      recommencer: document.getElementById('demo-recommencer'),
+      quitter: document.getElementById('demo-quitter')
+    };
+    let scenario = null;        // contenu de scenario-demo.json
+    let tSim = 0;               // minutes simulées depuis le début du scénario
+    let enLecture = false;
+    let iVitesse = 0;
+    let minuteurDemo = null;
+    let dernierInstant = 0;
+    let debutMinutes = 6 * 60;  // heure simulée du début (lue dans le scénario)
+    const calqueDemo = L.layerGroup();
+    const marqueursDemo = {};   // code station → marqueur simulé
+
+    const deuxChiffres = n => String(n).padStart(2, '0');
+
+    // Minutes simulées → « J+1 14:30 » (jamais de vraie date)
+    function heureSimulee(minutes) {
+      const total = debutMinutes + Math.floor(minutes);
+      const jour = Math.floor(total / 1440);
+      const dansJour = total % 1440;
+      return 'J+' + jour + ' ' + deuxChiffres(Math.floor(dansJour / 60)) + ':' + deuxChiffres(dansJour % 60);
+    }
+
+    const dureeMinutes = () => scenario.duree_heures * 60;
+
+    // Hauteur simulée (en mètres) d'une station à un instant donné : ligne droite entre deux points du scénario
+    function hauteurSimulee(station, minutes) {
+      const h = minutes / 60;
+      const serie = station.hauteurs;
+      if (h <= serie[0][0]) return serie[0][1];
+      for (let i = 1; i < serie.length; i++) {
+        const [t1, v1] = serie[i];
+        if (h <= t1) {
+          const [t0, v0] = serie[i - 1];
+          return v0 + (v1 - v0) * (h - t0) / (t1 - t0);
+        }
+      }
+      return serie[serie.length - 1][1];
+    }
+
+    function etatSimule(station, hauteur) {
+      const s = SEUILS[station.code];
+      if (!s) return 'inconnu';
+      if (hauteur >= s.alerte) return 'alerte';
+      if (hauteur >= s.vigilance) return 'vigilance';
+      return 'normal';
+    }
+
+    function phaseActuelle() {
+      let nom = '';
+      for (const p of scenario.phases || []) if (tSim / 60 >= p.debut_h) nom = p.nom;
+      return nom;
+    }
+
+    // Fenêtre d'une station simulée
+    function bulleStationDemo(station) {
+      const h = hauteurSimulee(station, tSim);
+      const avant = hauteurSimulee(station, Math.max(0, tSim - TENDANCE_HEURES * 60));
+      const e = etatSimule(station, h);
+      const s = SEUILS[station.code];
+      const div = document.createElement('div');
+      div.className = 'bulle';
+      const ajouter = (balise, texte, classe) => {
+        const el = document.createElement(balise);
+        el.textContent = texte;
+        if (classe) el.className = classe;
+        div.appendChild(el);
+        return el;
+      };
+      ajouter('h3', station.nom);
+      ajouter('p', 'Cours d’eau : ' + station.cours_eau);
+      const ligne = ajouter('p', 'Hauteur : ' + metres(h), 'hauteur');
+      const pastille = document.createElement('span');
+      pastille.className = 'pastille';
+      pastille.style.background = ETATS[e].couleur;
+      pastille.textContent = ETATS[e].libelle;
+      ligne.appendChild(pastille);
+      const ecartCm = Math.round((h - avant) * 100);
+      const fleche = ecartCm > 0 ? '↑' : ecartCm < 0 ? '↓' : '→';
+      const signe = ecartCm > 0 ? '+' : ecartCm < 0 ? '−' : '';
+      const mot = ecartCm > 0 ? 'en hausse' : ecartCm < 0 ? 'en baisse' : 'stable';
+      ajouter('p', 'Tendance sur ' + TENDANCE_HEURES + ' h : ' + fleche + ' ' + signe + Math.abs(ecartCm) + ' cm (' + mot + ')');
+      ajouter('p', 'Heure simulée : ' + heureSimulee(tSim));
+      if (s) ajouter('p', 'Seuils : vigilance ' + metres(s.vigilance) + ' · alerte ' + metres(s.alerte));
+      ajouter('p', 'Scénario fictif : hauteurs simulées, pas des mesures réelles.', 'demo');
+      ajouter('p', 'Code station : ' + station.code, 'gris');
+      return div;
+    }
+
+    function construireStationsDemo() {
+      calqueDemo.clearLayers();
+      for (const code in marqueursDemo) delete marqueursDemo[code];
+      for (const station of scenario.stations) {
+        marqueursDemo[station.code] = L.circleMarker([station.lat, station.lng], {
+          radius: 9, color: '#fff', weight: 2, fillColor: ETATS.normal.hexa, fillOpacity: 0.95
+        })
+          .bindPopup(() => bulleStationDemo(station))
+          .addTo(calqueDemo);
+      }
+    }
+
+    // Couleurs des stations simulées + résumé dans le bandeau du haut
+    function majStationsDemo() {
+      const compte = { normal: 0, vigilance: 0, alerte: 0, inconnu: 0 };
+      for (const station of scenario.stations) {
+        const e = etatSimule(station, hauteurSimulee(station, tSim));
+        compte[e]++;
+        const m = marqueursDemo[station.code];
+        m.setStyle({ fillColor: ETATS[e].hexa });
+        if (m.isPopupOpen()) m.getPopup().setContent(bulleStationDemo(station));
+      }
+      const morceaux = ['Démo'];
+      if (compte.alerte) morceaux.push(compte.alerte + ' alerte');
+      if (compte.vigilance) morceaux.push(compte.vigilance + ' vigilance');
+      if (!compte.alerte && !compte.vigilance) morceaux.push(compte.normal + ' stations normales');
+      etat.textContent = morceaux.join(' · ');
+    }
+
+    // Informations du scénario : ajoutées à la main courante quand l'horloge simulée atteint leur heure
+    function injecterInformations() {
+      const aVenir = (scenario.informations || [])
+        .filter(info => info.t_h * 60 <= tSim && !entrees.some(e => e.scenario === info.id))
+        .sort((a, b) => a.t_h - b.t_h);
+      for (const info of aVenir) {
+        ajouterEntree({ type: 'information', texte: info.texte, lieu: info.lieu || null, scenario: info });
+      }
+    }
+
+    function majBarre() {
+      const fini = tSim >= dureeMinutes();
+      demo.horloge.textContent = heureSimulee(tSim);
+      demo.phase.textContent = fini ? 'Fin du scénario' : phaseActuelle();
+      demo.lecture.textContent = enLecture ? '⏸' : '▶';
+      demo.lecture.setAttribute('aria-label', enLecture ? 'Pause' : (fini ? 'Rejouer depuis le début' : 'Lecture'));
+      demo.vitesse.textContent = LIBELLES_VITESSE[iVitesse];
+    }
+
+    // Un pas de l'horloge (4 fois par seconde)
+    function tic() {
+      const maintenant = performance.now();
+      const dt = Math.min((maintenant - dernierInstant) / 1000, 1);   // au plus 1 s (onglet mis en veille)
+      dernierInstant = maintenant;
+      if (enLecture) {
+        const minutesParSeconde = dureeMinutes() / DEMO_DUREE_REELLE_S;
+        tSim = Math.min(tSim + dt * minutesParSeconde * VITESSES[iVitesse], dureeMinutes());
+        if (tSim >= dureeMinutes()) enLecture = false;
+      }
+      majStationsDemo();
+      injecterInformations();
+      majBarre();
+    }
+
+    async function chargerScenario() {
+      if (scenario) return true;
+      try {
+        const reponse = await fetch('scenario-demo.json', { cache: 'no-cache' });
+        if (!reponse.ok) throw new Error('code ' + reponse.status);
+        scenario = await reponse.json();
+        const [hh, mm] = String(scenario.heure_debut || '06:00').split(':').map(Number);
+        debutMinutes = hh * 60 + (mm || 0);
+        construireStationsDemo();
+        return true;
+      } catch (e) {
+        scenario = null;
+        avertir('Mode démo indisponible : le fichier scenario-demo.json n’a pas pu être chargé.');
+        return false;
+      }
+    }
+
+    // Nouvelle lecture : horloge à J+0, main courante et points de la démo remis à zéro
+    function nouvelleLecture() {
+      try { localStorage.removeItem(DEMO_MC_CLE); } catch (e) { /* rien à faire */ }
+      try { localStorage.removeItem(DEMO_PS_CLE); } catch (e) { /* rien à faire */ }
+      entrees = [];
+      points = [];
+      tSim = 0;
+      enLecture = true;
+      dernierInstant = performance.now();
+      mc.confirmation.hidden = true;
+      annulerCorrection();
+      arreterPlacement();
+      annulerCreation();
+      carte.closePopup();
+      afficherPoints();
+      afficherEntrees();
+      majStationsDemo();
+      majBarre();
+    }
+
+    async function entrerDemo() {
+      demo.entrer.disabled = true;
+      const ok = await chargerScenario();
+      demo.entrer.disabled = false;
+      if (!ok) return;
+      modeDemo = true;
+      document.body.classList.add('demo');
+      demo.barre.hidden = false;
+      demo.entrer.hidden = true;
+      message.hidden = true;                 // le message Hub'Eau ne concerne pas la démo
+      carte.removeLayer(calqueStations);     // les vraies stations sont mises de côté, pas modifiées
+      calqueDemo.addTo(carte);
+      nouvelleLecture();
+      clearInterval(minuteurDemo);
+      minuteurDemo = setInterval(tic, 250);
+    }
+
+    function quitterDemo() {
+      clearInterval(minuteurDemo);
+      minuteurDemo = null;
+      enLecture = false;
+      mc.confirmation.hidden = true;
+      annulerCorrection();
+      arreterPlacement();
+      annulerCreation();
+      carte.closePopup();
+      modeDemo = false;                      // à partir d'ici, on relit les données réelles
+      document.body.classList.remove('demo');
+      demo.barre.hidden = true;
+      demo.entrer.hidden = false;
+      carte.removeLayer(calqueDemo);
+      calqueStations.addTo(carte);
+      entrees = lireStockage();
+      points = lirePoints();
+      afficherPoints();
+      afficherEntrees();
+      chargerStations();                     // vraies données Hub'Eau, rechargées à jour
+    }
+
+    demo.entrer.addEventListener('click', entrerDemo);
+    demo.quitter.addEventListener('click', quitterDemo);
+    demo.recommencer.addEventListener('click', nouvelleLecture);
+    demo.lecture.addEventListener('click', () => {
+      if (tSim >= dureeMinutes()) { nouvelleLecture(); return; }   // fin du scénario : on rejoue
+      enLecture = !enLecture;
+      dernierInstant = performance.now();
+      majBarre();
+    });
+    demo.vitesse.addEventListener('click', () => {
+      iVitesse = (iVitesse + 1) % VITESSES.length;
+      majBarre();
+    });
+
+    // Démarrage (mode réel)
     points = lirePoints();
     afficherPoints();
     entrees = lireStockage();
     if (!stockageOk) ecrireStockage();
     afficherEntrees();
+    chargerReferentiel();
   </script>
 </body>
 </html>
