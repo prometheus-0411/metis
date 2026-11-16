@@ -48,9 +48,10 @@
       --rouge: #c62828;
       --gris: #8a94a3;
       --violet: #7b1fa2;
-      --entete: 48px;          /* hauteur des bandeaux fixes en haut */
+      --haut-bandeau: 76px;    /* bandeau du haut : titre + synthèse (mesuré en direct par le script) */
+      --entete: var(--haut-bandeau);                  /* hauteur totale des bandeaux fixes en haut */
     }
-    body.demo { --entete: 92px; }   /* + bandeau orange DÉMO */
+    body.demo { --entete: calc(var(--haut-bandeau) + 44px); }   /* + bandeau orange DÉMO (44 px) */
     html, body {
       margin: 0;
       height: 100%;
@@ -61,11 +62,13 @@
     #bandeau {
       position: fixed;
       top: 0; left: 0; right: 0;
-      height: 48px;
+      box-sizing: border-box;
       display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 0 16px;
+      flex-direction: column;
+      justify-content: center;
+      gap: 2px;
+      padding-bottom: 6px !important;
+      padding: 0 max(16px, env(safe-area-inset-right, 0px)) 0 max(16px, env(safe-area-inset-left, 0px));
       background: #1b2430;
       color: #fff;
       font-size: 18px;
@@ -74,16 +77,60 @@
       box-shadow: 0 2px 6px rgba(0,0,0,.3);
       white-space: nowrap;
     }
-    /* Petite ligne d'état à droite du titre */
-    #etat {
-      margin-left: auto;
-      min-width: 0;
-      font-size: 13px;
-      font-weight: 400;
-      color: #b8c4d4;
+    /* Ligne 1 : titre et boutons ; ligne 2 : synthèse (le plus grave d'abord) */
+    .ligne-titre { display: flex; align-items: center; gap: 8px; height: 36px; min-width: 0; }
+    .ligne-titre .titre { margin-right: auto; overflow: hidden; text-overflow: ellipsis; }
+    .ligne-synthese { display: flex; align-items: flex-start; gap: 6px; min-width: 0; }
+    /* Synthèse : deux lignes au plus ; au-delà, les éléments les moins graves passent dans « Détails » */
+    #synthese {
+      flex: 1 1 auto; min-width: 0;
+      display: flex; flex-wrap: wrap; align-items: center; gap: 4px 5px;
+      max-height: 48px; overflow: hidden;   /* 2 lignes de pastilles de 22 px + 4 px d'écart */
+    }
+    .puce {
+      flex: none;
+      font-size: 12px; font-weight: 600; line-height: 18px;
+      padding: 1px 8px; border-radius: 10px;
       white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      font-variant-numeric: tabular-nums;
+      color: #d6dde6; background: #2b3747; border: 1px solid transparent;
+    }
+    .puce.normal { color: #c8e6c9; background: #1f3a2a; }
+    .puce.inconnu { color: #e3e7ed; background: transparent; border: 1px dashed #8a94a3; }
+    .puce.vigilance { color: #1b1300; background: var(--orange); }
+    .puce.alerte, .puce.touche { color: #fff; background: var(--rouge); }
+    .puce.evacue { color: #fff; background: var(--violet); }
+    .puce.menace { color: #ffcc99; background: transparent; border: 2px solid var(--orange); padding: 0 7px; }
+    .puce.avertissement { color: #1b1300; background: #ffb300; font-weight: 700; }
+    .puce.vig-verte  { color: #fff; background: #2e7d32; }
+    .puce.vig-jaune  { color: #1b1300; background: #fdd835; }
+    .puce.vig-orange { color: #1b1300; background: #ef6c00; }
+    .puce.vig-rouge  { color: #fff; background: #c62828; }
+    #synthese-details-bouton, #actualiser {
+      flex: none;
+      font: inherit; font-size: 12px; font-weight: 600;
+      padding: 1px 7px; border-radius: 4px; cursor: pointer;
+      background: transparent; color: #d6dde6; border: 1px solid #6b7a8c;
+    }
+    #actualiser { font-size: 13px; padding: 4px 10px; }
+    #actualiser:disabled { opacity: .6; cursor: wait; }
+    #synthese-details-bouton:focus-visible, #actualiser:focus-visible { outline: 2px solid #8ab4ff; outline-offset: 2px; }
+    /* Liste complète de la synthèse, sous les bandeaux */
+    #synthese-details {
+      position: fixed;
+      top: var(--entete); left: 0; right: 0;
+      z-index: 2100;
+      max-height: 60vh; overflow: auto;
+      padding: 10px max(16px, env(safe-area-inset-right, 0px)) 12px max(16px, env(safe-area-inset-left, 0px));
+      background: #243041; color: #e8edf3;
+      box-shadow: 0 4px 10px rgba(0,0,0,.4);
+      font-size: 14px; line-height: 1.45;
+    }
+    #synthese-details ul { margin: 0; padding: 0 0 0 18px; display: flex; flex-direction: column; gap: 4px; }
+    #synthese-details .alerte-texte { color: #ffcc80; font-weight: 700; }
+    #synthese-details button {
+      margin-top: 8px; font: inherit; font-size: 14px; padding: 6px 12px; border-radius: 4px; cursor: pointer;
+      background: #fff; color: #1b2430; border: none;
     }
     /* Mise en page sous le bandeau : carte (60 %) à gauche, main courante à droite */
     #espace {
@@ -153,6 +200,17 @@
       margin-bottom: 36px !important; /* laisse la place à la ligne des crédits en bas */
     }
     .legende .ligne { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+    /* Légende repliable : un toucher sur « Légende » l'ouvre ou la referme */
+    .legende-bouton {
+      display: flex; align-items: center; gap: 6px;
+      font: inherit; font-size: 12px; font-weight: 700; color: #1b2430;
+      background: none; border: none; padding: 2px 0; cursor: pointer; min-height: 28px;
+    }
+    .legende-bouton::after { content: '▾'; font-size: 11px; }
+    .legende.repliee .legende-bouton::after { content: '▸'; }
+    .legende.repliee .legende-corps { display: none; }
+    .legende-bouton:focus-visible { outline: 2px solid #1d4ed8; outline-offset: 2px; }
+    .legende.repliee { padding: 2px 10px; }
     .legende .rond { width: 12px; height: 12px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px rgba(0,0,0,.25); flex: none; }
     .legende .note { margin-top: 2px; font-size: 11px; font-style: italic; color: #8a4b00; }
 
@@ -187,13 +245,11 @@
     @media (max-width: 767px) {
       #panneau { border-left: none; border-top: 1px solid var(--mc-bord); }
       #mc-liste { flex: none; overflow: visible; }
-      .legende {
+      .legende { padding: 5px 8px; font-size: 11px; line-height: 1.5; }
+      .legende-corps {
         display: grid;
         grid-template-columns: auto auto;
         column-gap: 10px;
-        padding: 5px 8px;
-        font-size: 11px;
-        line-height: 1.5;
       }
       .legende .rond { width: 9px; height: 9px; }
       .legende .note { grid-column: 1 / -1; font-size: 10px; }
@@ -473,7 +529,7 @@
     #demo-entrer:disabled { opacity: .6; cursor: wait; }
     #demo-barre {
       position: fixed;
-      top: 48px; left: 0; right: 0;
+      top: var(--haut-bandeau); left: 0; right: 0;
       height: 44px;
       box-sizing: border-box;
       z-index: 2000;
@@ -582,9 +638,18 @@
   </style>
 </head>
 <body>
-  <header id="bandeau">Métis — Lyon <span id="etat">Chargement des stations…</span>
-    <button type="button" id="demo-entrer">Mode démo</button>
+  <header id="bandeau">
+    <div class="ligne-titre">
+      <span class="titre">Métis — Lyon</span>
+      <button type="button" id="actualiser" title="Recharger maintenant les hauteurs d’eau (Hub’Eau)">↻ Actualiser</button>
+      <button type="button" id="demo-entrer">Mode démo</button>
+    </div>
+    <!-- Synthèse : où on en est, y compris ce qu'on ne sait pas (le plus grave d'abord) -->
+    <div class="ligne-synthese">
+      <div id="synthese" role="status" aria-live="polite"><span class="puce">Chargement des stations…</span><button type="button" id="synthese-details-bouton" hidden aria-expanded="false" aria-controls="synthese-details">Détails</button></div>
+    </div>
   </header>
+  <div id="synthese-details" hidden role="region" aria-label="Synthèse détaillée"></div>
   <!-- Bandeau du mode démo : horloge simulée et commandes de lecture -->
   <div id="demo-barre" hidden role="region" aria-label="Mode démo">
     <span class="demo-etiquette">DÉMO</span>
@@ -715,6 +780,20 @@
     const legende = L.control({ position: 'bottomleft' });
     legende.onAdd = function () {
       const div = L.DomUtil.create('div', 'legende');
+      // Repliée par défaut sur téléphone (elle masquait une partie de la carte), ouverte sur ordinateur
+      if (window.matchMedia('(max-width: 767px)').matches) div.classList.add('repliee');
+      const bouton = document.createElement('button');
+      bouton.type = 'button';
+      bouton.className = 'legende-bouton';
+      bouton.textContent = 'Légende';
+      const majBouton = () => bouton.setAttribute('aria-expanded', div.classList.contains('repliee') ? 'false' : 'true');
+      bouton.addEventListener('click', () => { div.classList.toggle('repliee'); majBouton(); });
+      majBouton();
+      div.appendChild(bouton);
+      L.DomEvent.disableClickPropagation(div);   // toucher la légende ne place pas de point
+      const corps = document.createElement('div');
+      corps.className = 'legende-corps';
+      div.appendChild(corps);
       const lignes = [
         [ETATS.normal.hexa, 'Normal'],
         [ETATS.vigilance.hexa, 'Vigilance'],
@@ -737,12 +816,12 @@
           rond.style.background = couleur;
         }
         ligne.append(rond, document.createTextNode(texte));
-        div.appendChild(ligne);
+        corps.appendChild(ligne);
       }
       const note = document.createElement('div');
       note.className = 'note';
       note.textContent = 'Seuils de démo, non officiels';
-      div.appendChild(note);
+      corps.appendChild(note);
       return div;
     };
     legende.addTo(carte);
@@ -758,13 +837,24 @@
     const DELAI_MAX = 15000;              // au-delà de 15 s sans réponse, on considère que l'API ne répond pas
     const HEURE = 3600 * 1000;
 
-    const etat = document.getElementById('etat');
     const message = document.getElementById('message');
     const calqueStations = L.layerGroup().addTo(carte);
     // Dernière hauteur réelle (en m) et nom de chaque station, pour le suivi automatique des points
     const hauteursReelles = {};
     const nomsStations = {};
     let derniersResultats = [];   // dernier chargement réel complet (fiche de faits de l'étape 8)
+
+    // Fraîcheur des données réelles (bandeau de synthèse, étape 9)
+    const ACTUALISATION_MIN = 15;     // rechargement automatique des stations toutes les 15 minutes
+    const DONNEES_ANCIENNES_MIN = 60; // au-delà, le bandeau affiche « DONNÉES ANCIENNES »
+    const chargement = {
+      enCours: false,
+      reussite: null,     // heure (Date) du dernier chargement réussi
+      echec: null,        // heure (Date) du dernier échec, null si le dernier essai a réussi
+      mesuresDe: null,    // heure (Date) de la mesure la plus récente reçue
+      stations: null      // décompte des stations du dernier chargement réussi
+    };
+    const majSyntheseSiPrete = () => { if (typeof majSynthese === 'function') majSynthese(); };
 
     // Appelle l'API et renvoie la réponse JSON (erreur si pas de réponse ou réponse invalide)
     async function appelerApi(url) {
@@ -911,36 +1001,70 @@
       return r;
     }
 
-    // Écrit dans le bandeau, sauf en démo (le bandeau montre alors l'état simulé)
-    function ecrireEtat(texte) { if (!modeDemo) etat.textContent = texte; }
+    // Décompte des stations pour le bandeau : les stations sans donnée sont comptées, jamais oubliées
+    function compterStations(resultats) {
+      const c = { total: resultats.length, alerte: 0, vigilance: 0, normal: 0, sansDonnee: 0, sansSeuil: 0 };
+      for (const r of resultats) {
+        if (r.etat !== 'inconnu') c[r.etat]++;
+        else if (r.mesure && r.recente) c.sansSeuil++;   // mesure récente, mais pas de seuil pour la juger
+        else c.sansDonnee++;                             // pas de mesure, mesure trop ancienne ou service muet
+      }
+      return c;
+    }
 
+    // Chargement (et rechargement) des stations réelles.
+    // Si Hub'Eau ne répond pas alors qu'on a déjà des données : on les garde à l'écran, et on le dit.
     async function chargerStations() {
+      if (chargement.enCours) return;
+      chargement.enCours = true;
+      const avaitDonnees = derniersResultats.length > 0;
+      majSyntheseSiPrete();
+      try {
+        // 1. Liste des stations en service dans la zone
+        let stations;
+        try {
+          const reponse = await appelerApi(API + '/referentiel/stations?bbox=' + ZONE
+            + '&en_service=1&format=json&size=200'
+            + '&fields=code_station,libelle_station,libelle_cours_eau,longitude_station,latitude_station');
+          stations = (reponse.data || []).filter(s => s.longitude_station != null && s.latitude_station != null);
+        } catch (e) {
+          chargement.echec = new Date();
+          if (!avaitDonnees) {
+            afficherErreur('Les stations hydrométriques n’ont pas pu être chargées : le service Hub’Eau ne répond pas. '
+              + 'La carte reste utilisable. Réessayez dans quelques minutes.');
+          }
+          return;
+        }
+        if (stations.length === 0) {
+          chargement.echec = new Date();
+          if (!avaitDonnees) afficherErreur('Hub’Eau ne signale aucune station hydrométrique en service dans la zone.');
+          return;
+        }
+
+        // 2. Dernière hauteur et hauteur d'il y a 3 h, pour chaque station (en parallèle)
+        const resultats = await Promise.all(stations.map(infosStation));
+        // Rechargement où plus aucune hauteur ne répond : on garde les données précédentes
+        if (avaitDonnees && resultats.every(r => r.erreur)) {
+          chargement.echec = new Date();
+          return;
+        }
+        afficherStations(resultats);
+      } finally {
+        chargement.enCours = false;
+        majSyntheseSiPrete();
+      }
+    }
+
+    // Remplace les stations affichées par un nouveau chargement réussi
+    function afficherStations(resultats) {
       message.hidden = true;
       calqueStations.clearLayers();
-      ecrireEtat('Chargement des stations…');
-
-      // 1. Liste des stations en service dans la zone
-      let stations;
-      try {
-        const reponse = await appelerApi(API + '/referentiel/stations?bbox=' + ZONE
-          + '&en_service=1&format=json&size=200'
-          + '&fields=code_station,libelle_station,libelle_cours_eau,longitude_station,latitude_station');
-        stations = (reponse.data || []).filter(s => s.longitude_station != null && s.latitude_station != null);
-      } catch (e) {
-        ecrireEtat('Stations indisponibles');
-        afficherErreur('Les stations hydrométriques n’ont pas pu être chargées : le service Hub’Eau ne répond pas. '
-          + 'La carte reste utilisable. Réessayez dans quelques minutes.');
-        return;
-      }
-      if (stations.length === 0) {
-        ecrireEtat('Aucune station');
-        afficherErreur('Hub’Eau ne signale aucune station hydrométrique en service dans la zone.');
-        return;
-      }
-
-      // 2. Dernière hauteur et hauteur d'il y a 3 h, pour chaque station (en parallèle)
-      const resultats = await Promise.all(stations.map(infosStation));
       derniersResultats = resultats;   // gardés pour la fiche de faits du point de situation
+      chargement.reussite = new Date();
+      chargement.echec = null;
+      chargement.stations = compterStations(resultats);
+      const dates = resultats.filter(r => r.mesure).map(r => new Date(r.mesure.date_obs).getTime());
+      chargement.mesuresDe = dates.length ? new Date(Math.max(...dates)) : null;
 
       // Hauteurs utilisées par le suivi automatique des points : seulement les mesures récentes
       for (const code in hauteursReelles) delete hauteursReelles[code];
@@ -965,14 +1089,6 @@
           .addTo(calqueStations);
       }
 
-      // 4. Résumé dans le bandeau
-      const compte = n => resultats.filter(r => r.etat === n).length;
-      const morceaux = [stations.length + ' stations'];
-      if (compte('alerte')) morceaux.push(compte('alerte') + ' alerte');
-      if (compte('vigilance')) morceaux.push(compte('vigilance') + ' vigilance');
-      if (!compte('alerte') && !compte('vigilance')) morceaux.push(compte('normal') + ' normales');
-      ecrireEtat(morceaux.join(' · '));
-
       // Suivi automatique des points référencés (mode réel uniquement)
       if (!modeDemo && typeof evaluerMenaces === 'function') evaluerMenaces();
 
@@ -983,6 +1099,17 @@
     }
 
     chargerStations();
+
+    // Rechargement automatique toutes les 15 minutes (pas en démo, pas quand la page est en arrière-plan)
+    setInterval(() => { if (!modeDemo && !document.hidden) chargerStations(); }, ACTUALISATION_MIN * 60000);
+    // iPhone : les minuteries s'arrêtent quand l'écran est verrouillé ; au retour, on recharge si besoin
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden || modeDemo) return;
+      const age = chargement.reussite ? Date.now() - chargement.reussite.getTime() : Infinity;
+      if (age >= ACTUALISATION_MIN * 60000) chargerStations();
+      majSyntheseSiPrete();
+    });
+    document.getElementById('actualiser').addEventListener('click', chargerStations);
   </script>
 
   <script>
@@ -1442,6 +1569,7 @@
           .addTo(calquePoints);
       }
       remplirMenuLieu();
+      majSynthese();
     }
 
     // Menu « Lieu » du formulaire de la main courante : points référencés, puis points ajoutés en crise
@@ -1711,6 +1839,7 @@
         ajouterEntree({ type: 'evenement', texte: 'Statut de ' + p.nom + ' : ' + ACTIONS[action].toLowerCase(), lieu: p.id });
       }
       if (m && m.isPopupOpen()) m.getPopup().update();
+      majSynthese();
     }
 
     // Suivi automatique : à chaque nouvelle hauteur (démo : à chaque pas ; réel : à chaque chargement)
@@ -1931,21 +2060,27 @@
       }
     }
 
-    // Couleurs des stations simulées + résumé dans le bandeau du haut
+    // Couleurs des stations simulées + décompte pour le bandeau de synthèse
+    let stationsDemo = null;
     function majStationsDemo() {
-      const compte = { normal: 0, vigilance: 0, alerte: 0, inconnu: 0 };
+      const c = { total: scenario.stations.length, alerte: 0, vigilance: 0, normal: 0, sansDonnee: 0, sansSeuil: 0 };
       for (const station of scenario.stations) {
         const e = etatSimule(station, hauteurSimulee(station, tSim));
-        compte[e]++;
+        if (e === 'inconnu') c.sansSeuil++; else c[e]++;
         const m = marqueursDemo[station.code];
         m.setStyle({ fillColor: ETATS[e].hexa });
         if (m.isPopupOpen()) m.getPopup().setContent(bulleStationDemo(station));
       }
-      const morceaux = ['Démo'];
-      if (compte.alerte) morceaux.push(compte.alerte + ' alerte');
-      if (compte.vigilance) morceaux.push(compte.vigilance + ' vigilance');
-      if (!compte.alerte && !compte.vigilance) morceaux.push(compte.normal + ' stations normales');
-      etat.textContent = morceaux.join(' · ');
+      stationsDemo = c;
+    }
+
+    // Vigilance crues du scénario (chronologie fictive de scenario-demo.json) : « verte », « jaune »…
+    function vigilanceDemo() {
+      const chrono = scenario && scenario.vigilance_crues && scenario.vigilance_crues.chronologie;
+      if (!Array.isArray(chrono)) return null;
+      let niveau = null;
+      for (const v of chrono) if (tSim / 60 >= v.t_h) niveau = v.niveau;
+      return niveau;
     }
 
     // Informations du scénario : ajoutées à la main courante quand l'horloge simulée atteint leur heure
@@ -1981,6 +2116,7 @@
       evaluerMenaces();
       injecterInformations();
       majBarre();
+      majSynthese();
     }
 
     async function chargerScenario() {
@@ -2020,6 +2156,7 @@
       afficherEntrees();
       majStationsDemo();
       majBarre();
+      majSynthese();
     }
 
     async function entrerDemo() {
@@ -2031,6 +2168,7 @@
       document.body.classList.add('demo');
       demo.barre.hidden = false;
       demo.entrer.hidden = true;
+      boutonActualiser.hidden = true;        // en démo, les données sont simulées
       message.hidden = true;                 // le message Hub'Eau ne concerne pas la démo
       carte.removeLayer(calqueStations);     // les vraies stations sont mises de côté, pas modifiées
       calqueDemo.addTo(carte);
@@ -2052,6 +2190,7 @@
       document.body.classList.remove('demo');
       demo.barre.hidden = true;
       demo.entrer.hidden = false;
+      boutonActualiser.hidden = false;
       carte.removeLayer(calqueDemo);
       calqueStations.addTo(carte);
       entrees = lireStockage();
@@ -2059,6 +2198,7 @@
       etatsPoints = lireEtats();
       afficherPoints();
       afficherEntrees();
+      majSynthese();
       chargerStations();                     // vraies données Hub'Eau, rechargées à jour
     }
 
@@ -2075,6 +2215,186 @@
       iVitesse = (iVitesse + 1) % VITESSES.length;
       majBarre();
     });
+
+    // =====================================================================
+    //  BANDEAU DE SYNTHÈSE (étape 9)
+    //  Dit en un coup d'œil où on en est, Y COMPRIS ce qu'on ne sait pas :
+    //  une donnée absente ou périmée ne passe jamais pour une situation normale.
+    //  - stations : alerte, vigilance, normales, sans donnée (comptées, jamais oubliées)
+    //  - points : menacés, touchés, évacués (seulement s'il y en a)
+    //  - fraîcheur : heure de la mesure la plus récente, « DONNÉES ANCIENNES » au-delà d'1 h,
+    //    échec d'actualisation signalé ; « Données simulées » en démo
+    //  - vigilance crues : en démo seulement (chronologie fictive du scénario)
+    //  Sur petit écran, si tout ne tient pas, on garde le plus grave et un bouton « Détails ».
+    // =====================================================================
+    const boutonActualiser = document.getElementById('actualiser');
+    const synthese = {
+      ligne: document.getElementById('synthese'),
+      bouton: document.getElementById('synthese-details-bouton'),
+      details: document.getElementById('synthese-details')
+    };
+    let signatureSynthese = '';
+
+    const heureMinute = d => d.toLocaleTimeString('fr-FR', { timeZone: 'Europe/Paris', hour: '2-digit', minute: '2-digit' });
+    const pluriel = (n, un, plusieurs) => n + ' ' + (n > 1 ? plusieurs : un);
+    function depuis(d) {
+      const min = Math.max(0, Math.floor((Date.now() - d.getTime()) / 60000));
+      if (min < 1) return 'à l’instant';
+      if (min < 60) return 'il y a ' + min + ' min';
+      const h = Math.floor(min / 60), reste = min % 60;
+      return 'il y a ' + h + ' h' + (reste ? ' ' + deuxChiffres(reste) : '');
+    }
+
+    // Les éléments du bandeau, dans l'ordre d'affichage.
+    // « garde » : plus le nombre est petit, plus l'élément est important (gardé en dernier sur petit écran).
+    function elementsSynthese() {
+      const el = [];
+      const ajouter = (texte, classe, garde, detail) => el.push({ texte, classe, garde, detail: detail || texte });
+
+      // Vigilance crues : en démo seulement (aucune source officielle branchée en mode réel)
+      if (modeDemo) {
+        const v = vigilanceDemo();
+        if (v) ajouter('Vigilance ' + v, 'vig-' + v, 0, 'Vigilance crues : ' + v + ' (chronologie fictive du scénario)');
+      }
+
+      // Stations
+      const c = modeDemo ? stationsDemo : chargement.stations;
+      if (!c) {
+        if (!modeDemo && chargement.enCours) ajouter('Chargement des stations…', '', 1);
+        else if (!modeDemo) ajouter('Stations indisponibles', 'avertissement', 1,
+          'Stations indisponibles : le service Hub’Eau ne répond pas' + (chargement.echec ? ' (essai à ' + heureMinute(chargement.echec) + ')' : '') + '.');
+      } else {
+        ajouter(pluriel(c.total, 'station', 'stations'), '', 9, null);
+        if (c.alerte) ajouter(c.alerte + ' en alerte', 'alerte', 1);
+        if (c.vigilance) ajouter(c.vigilance + ' en vigilance', 'vigilance', 4);
+        if (c.normal) ajouter(pluriel(c.normal, 'normale', 'normales'), 'normal', 8);
+        if (c.sansDonnee) ajouter(c.sansDonnee + ' sans donnée', 'inconnu', 3,
+          c.sansDonnee + ' sans donnée (pas de mesure, mesure de plus de ' + MESURE_RECENTE_HEURES + ' h ou service muet) : leur situation est inconnue');
+        if (c.sansSeuil) ajouter(c.sansSeuil + ' sans seuil', 'inconnu', 7,
+          c.sansSeuil + ' sans seuil (mesurées, mais aucun seuil pour les juger)');
+      }
+
+      // Points sensibles : seulement ceux qui ne sont pas normaux
+      const n = { menace: 0, touche: 0, evacue: 0 };
+      for (const p of tousPoints()) { const st = etatDe(p.id).statut; if (st in n) n[st]++; }
+      if (n.touche) ajouter(pluriel(n.touche, 'point touché', 'points touchés'), 'touche', 1);
+      if (n.evacue) ajouter(pluriel(n.evacue, 'point évacué', 'points évacués'), 'evacue', 2);
+      if (n.menace) ajouter(pluriel(n.menace, 'point menacé', 'points menacés'), 'menace', 2);
+
+      // Fraîcheur des données
+      if (modeDemo) {
+        ajouter('Données simulées', '', 6, 'Données simulées : scénario de crue fictif, aucune mesure réelle.');
+      } else if (chargement.stations) {
+        if (chargement.echec) {
+          ajouter('Échec de l’actualisation à ' + heureMinute(chargement.echec), 'avertissement', 0,
+            'Échec de l’actualisation à ' + heureMinute(chargement.echec) + ' : Hub’Eau n’a pas répondu, les dernières données reçues restent affichées.');
+        }
+        if (!chargement.mesuresDe) {
+          ajouter('Aucune mesure reçue', 'avertissement', 0);
+        } else {
+          const ageMin = (Date.now() - chargement.mesuresDe.getTime()) / 60000;
+          const quand = heureMinute(chargement.mesuresDe) + ' · ' + depuis(chargement.mesuresDe);
+          if (ageMin > DONNEES_ANCIENNES_MIN) {
+            ajouter('DONNÉES ANCIENNES · ' + depuis(chargement.mesuresDe), 'avertissement', 0,
+              'DONNÉES ANCIENNES : la mesure la plus récente date de ' + heureMinute(chargement.mesuresDe)
+              + ' (' + depuis(chargement.mesuresDe) + ', plus de ' + DONNEES_ANCIENNES_MIN + ' min).');
+          } else {
+            ajouter('Données de ' + quand, '', 5, 'Données de ' + heureMinute(chargement.mesuresDe)
+              + ' (' + depuis(chargement.mesuresDe) + ') : heure de la mesure la plus récente.');
+          }
+        }
+        if (chargement.enCours) ajouter('Actualisation…', '', 6);
+      }
+      return el;
+    }
+
+    // Liste complète, ouverte par « Détails »
+    function remplirDetails(el) {
+      synthese.details.textContent = '';
+      const liste = document.createElement('ul');
+      const c = modeDemo ? stationsDemo : chargement.stations;
+      for (const e of el) {
+        if (!e.detail) continue;
+        const li = document.createElement('li');
+        li.textContent = e.detail;
+        if (/avertissement|alerte|touche/.test(e.classe)) li.className = 'alerte-texte';
+        liste.appendChild(li);
+      }
+      if (c) {
+        const li = document.createElement('li');
+        li.textContent = 'Total : ' + pluriel(c.total, 'station', 'stations') + (modeDemo ? ' simulées' : ' en service dans la zone') + '.';
+        liste.appendChild(li);
+      }
+      if (!el.some(e => /point/.test(e.texte))) {
+        const li = document.createElement('li');
+        li.textContent = 'Points sensibles : aucun menacé, touché ou évacué.';
+        liste.appendChild(li);
+      }
+      if (!modeDemo && chargement.reussite) {
+        const li = document.createElement('li');
+        li.textContent = 'Dernière actualisation réussie à ' + heureMinute(chargement.reussite)
+          + ' ; actualisation automatique toutes les ' + ACTUALISATION_MIN + ' min.';
+        liste.appendChild(li);
+      }
+      const fermer = document.createElement('button');
+      fermer.type = 'button';
+      fermer.textContent = 'Fermer';
+      fermer.addEventListener('click', () => basculerDetails(false));
+      synthese.details.append(liste, fermer);
+    }
+
+    function basculerDetails(ouvrir) {
+      synthese.details.hidden = !ouvrir;
+      synthese.bouton.setAttribute('aria-expanded', ouvrir ? 'true' : 'false');
+      if (ouvrir) remplirDetails(elementsSynthese());
+    }
+    synthese.bouton.addEventListener('click', () => basculerDetails(synthese.details.hidden));
+
+    // Affiche les éléments ; s'ils ne tiennent pas sur la ligne, on retire d'abord les moins importants
+    function majSynthese() {
+      const el = elementsSynthese();
+      const signature = JSON.stringify(el.map(e => [e.texte, e.classe])) + '|' + synthese.ligne.clientWidth;
+      boutonActualiser.disabled = chargement.enCours;
+      boutonActualiser.textContent = chargement.enCours ? 'Actualisation…' : '↻ Actualiser';
+      if (signature === signatureSynthese) return;   // rien n'a changé (la démo appelle 4 fois par seconde)
+      signatureSynthese = signature;
+
+      synthese.ligne.textContent = '';
+      const puces = el.map(e => {
+        const span = document.createElement('span');
+        span.className = 'puce' + (e.classe ? ' ' + e.classe : '');
+        span.textContent = e.texte;
+        synthese.ligne.appendChild(span);
+        return { span, garde: e.garde };
+      });
+      synthese.ligne.appendChild(synthese.bouton);   // « Détails » toujours en dernier
+      // Ajustement : sur deux lignes au plus ; sinon on cache les moins importants et on propose « Détails »
+      synthese.bouton.hidden = true;
+      const deborde = () => synthese.ligne.scrollHeight > synthese.ligne.clientHeight + 1;
+      const ordre = [...puces].sort((a, b) => b.garde - a.garde);
+      let caches = 0;
+      for (const p of ordre) {
+        if (!deborde()) break;
+        if (puces.length - caches <= 1) break;   // on garde toujours au moins l'élément le plus grave
+        p.span.hidden = true;
+        caches++;
+        synthese.bouton.hidden = false;
+      }
+      synthese.bouton.textContent = caches ? 'Détails (+' + caches + ')' : 'Détails';
+      // Le bouton « Détails » reste proposé dès qu'il y a quelque chose d'important à lire en entier
+      if (!caches && el.some(e => e.classe === 'avertissement')) synthese.bouton.hidden = false;
+      if (!synthese.details.hidden) remplirDetails(el);
+    }
+
+    // La hauteur du bandeau suit son contenu (une ou deux lignes de synthèse) : on la transmet à la page
+    const bandeau = document.getElementById('bandeau');
+    const majHauteurBandeau = () => document.documentElement.style.setProperty('--haut-bandeau', bandeau.offsetHeight + 'px');
+    if (window.ResizeObserver) new ResizeObserver(majHauteurBandeau).observe(bandeau);
+    majHauteurBandeau();
+
+    // L'âge des données vieillit même sans nouveau chargement : on remet à jour toutes les 30 s
+    setInterval(majSynthese, 30000);
+    window.addEventListener('resize', () => { signatureSynthese = ''; majSynthese(); });
 
     // Démarrage (mode réel)
     etatsPoints = lireEtats();
