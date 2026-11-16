@@ -353,6 +353,11 @@
       color: #222;
     }
     #zone-carte.placement #carte { cursor: crosshair; }
+    /* En mode placement, les fenêtres et marqueurs ne captent plus le toucher :
+       il traverse jusqu'à la carte et place le point, même sur une station ou un autre point */
+    #zone-carte.placement .leaflet-marker-icon,
+    #zone-carte.placement .leaflet-interactive,
+    #zone-carte.placement .leaflet-popup-pane { pointer-events: none !important; }
     /* Sur téléphone : quand on revient à la carte, elle n'est pas cachée par le bandeau */
     #zone-carte { scroll-margin-top: 48px; }
     /* Fenêtre de création d'un point : en bas à gauche, sur la carte (ordinateur) */
@@ -1112,6 +1117,7 @@
 
     function demarrerPlacement() {
       annulerCreation();
+      carte.closePopup();   // la fenêtre du point précédent ne doit pas gêner le toucher suivant
       placementActif = true;
       boutonPoint.classList.add('actif');
       boutonPoint.textContent = 'Annuler le placement';
