@@ -5,11 +5,49 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Métis — Lyon</title>
 
+  <script>
+    // =====================================================================
+    //  SEUILS DES STATIONS — À MODIFIER ICI
+    // =====================================================================
+    //  SEUILS DE DÉMO, NON OFFICIELS : ils ont été placés un peu au-dessus
+    //  du plus haut niveau observé entre le 17 octobre et le 16 novembre 2026.
+    //  Ce ne sont PAS les seuils de Vigicrues.
+    //
+    //  Pour chaque station (repérée par son code) :
+    //    vigilance : hauteur en mètres à partir de laquelle le marqueur devient ORANGE
+    //    alerte    : hauteur en mètres à partir de laquelle le marqueur devient ROUGE
+    //  En dessous de la vigilance, le marqueur est VERT.
+    //  Écrire les nombres avec un POINT (2.50) et non une virgule (2,50).
+    //  Une station absente de cette liste reste grise (« pas de seuil »).
+    // =====================================================================
+    const SEUILS = {
+      'U471001003': { nom: "La Saône à Couzon-au-Mont-d'Or",    vigilance: 2.50, alerte: 3.50 },
+      'U472002001': { nom: 'La Saône à Lyon [Pont La Feuillée]', vigilance: 2.60, alerte: 3.60 },
+      'V300002001': { nom: 'Le Rhône à Lyon - Pont Morand',      vigilance: 1.50, alerte: 2.50 },
+      'V301501002': { nom: "L'Yzeron à Craponne - Aval",         vigilance: 0.80, alerte: 1.20 },
+      'V301502002': { nom: "L'Yzeron à Francheville - Pont",     vigilance: 1.20, alerte: 1.80 },
+      // Stations en service mais sans mesure de hauteur sur le dernier mois (pas de seuil pour l'instant) :
+      // U471001004 Saône à Couzon CNR, V300002002 Rhône Perrache-CNR, V300002003 Rhône Villeurbanne CNR,
+      // V301502301 ruisseau de Charbonnières, V301502401 ruisseau du Ratier.
+    };
+
+    // Une mesure plus ancienne que ce délai est considérée comme « pas récente » (marqueur gris)
+    const MESURE_RECENTE_HEURES = 24;
+    // Tendance : on compare la dernière hauteur à celle d'il y a 3 heures
+    const TENDANCE_HEURES = 3;
+  </script>
+
   <!-- Leaflet (bibliothèque de carte), chargée depuis un CDN -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
   <style>
+    :root {
+      --vert: #2e7d32;
+      --orange: #ef6c00;
+      --rouge: #c62828;
+      --gris: #8a94a3;
+    }
     html, body {
       margin: 0;
       height: 100%;
@@ -31,10 +69,12 @@
       font-weight: 600;
       z-index: 1000;
       box-shadow: 0 2px 6px rgba(0,0,0,.3);
+      white-space: nowrap;
     }
-    /* Petite ligne d'état à droite du titre (ex. « 10 stations · 5 mesurées ») */
+    /* Petite ligne d'état à droite du titre */
     #etat {
       margin-left: auto;
+      min-width: 0;
       font-size: 13px;
       font-weight: 400;
       color: #b8c4d4;
@@ -76,8 +116,27 @@
     /* Contenu de la bulle d'une station */
     .bulle h3 { margin: 0 0 4px; font-size: 15px; }
     .bulle p { margin: 2px 0; font-size: 14px; }
-    .bulle .hauteur { font-size: 18px; font-weight: 700; }
+    .bulle .hauteur { font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
     .bulle .gris { color: #666; }
+    .bulle .demo { margin-top: 6px; font-size: 12px; font-style: italic; color: #8a4b00; }
+    .pastille {
+      font-size: 12px; font-weight: 600; color: #fff;
+      padding: 2px 8px; border-radius: 10px;
+    }
+    /* Légende en bas à gauche */
+    .legende {
+      background: rgba(255,255,255,.95);
+      padding: 8px 10px;
+      border-radius: 6px;
+      box-shadow: 0 1px 5px rgba(0,0,0,.3);
+      font-size: 12px;
+      line-height: 1.6;
+      color: #222;
+      margin-bottom: 36px !important; /* laisse la place à la ligne des crédits en bas */
+    }
+    .legende .ligne { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+    .legende .rond { width: 12px; height: 12px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px rgba(0,0,0,.25); flex: none; }
+    .legende .note { margin-top: 2px; font-size: 11px; font-style: italic; color: #8a4b00; }
   </style>
 </head>
 <body>
@@ -96,11 +155,47 @@
         + ' · Hauteurs d’eau : <a href="https://hubeau.eaufrance.fr/page/api-hydrometrie">Hub’Eau</a>'
     }).addTo(carte);
 
+    // ---------- Les 4 états possibles d'une station ----------
+    const ETATS = {
+      normal:    { libelle: 'Normal',    couleur: 'var(--vert)',   hexa: '#2e7d32' },
+      vigilance: { libelle: 'Vigilance', couleur: 'var(--orange)', hexa: '#ef6c00' },
+      alerte:    { libelle: 'Alerte',    couleur: 'var(--rouge)',  hexa: '#c62828' },
+      inconnu:   { libelle: 'Pas de mesure récente', couleur: 'var(--gris)', hexa: '#8a94a3' }
+    };
+
+    // Légende des couleurs, en bas à gauche
+    const legende = L.control({ position: 'bottomleft' });
+    legende.onAdd = function () {
+      const div = L.DomUtil.create('div', 'legende');
+      const lignes = [
+        [ETATS.normal.hexa, 'Normal'],
+        [ETATS.vigilance.hexa, 'Vigilance'],
+        [ETATS.alerte.hexa, 'Alerte'],
+        [ETATS.inconnu.hexa, 'Pas de mesure récente']
+      ];
+      for (const [couleur, texte] of lignes) {
+        const ligne = document.createElement('div');
+        ligne.className = 'ligne';
+        const rond = document.createElement('span');
+        rond.className = 'rond';
+        rond.style.background = couleur;
+        ligne.append(rond, document.createTextNode(texte));
+        div.appendChild(ligne);
+      }
+      const note = document.createElement('div');
+      note.className = 'note';
+      note.textContent = 'Seuils de démo, non officiels';
+      div.appendChild(note);
+      return div;
+    };
+    legende.addTo(carte);
+
     // ---------- Stations hydrométriques (API Hub'Eau Hydrométrie v2) ----------
     // Doc : https://hubeau.eaufrance.fr/page/api-hydrometrie
     const API = 'https://hubeau.eaufrance.fr/api/v2/hydrometrie';
     const ZONE = '4.70,45.65,5.00,45.85'; // longitude min, latitude min, longitude max, latitude max
     const DELAI_MAX = 15000;              // au-delà de 15 s sans réponse, on considère que l'API ne répond pas
+    const HEURE = 3600 * 1000;
 
     const etat = document.getElementById('etat');
     const message = document.getElementById('message');
@@ -127,9 +222,25 @@
       return (reponse.data && reponse.data[0]) || null;
     }
 
+    // Hauteur d'il y a 3 h (par rapport à la dernière mesure), à 30 min près ; null si introuvable
+    async function hauteurPrecedente(codeStation, derniere) {
+      const cible = new Date(derniere.date_obs).getTime() - TENDANCE_HEURES * HEURE;
+      const debut = new Date(cible - 0.5 * HEURE).toISOString().slice(0, 19); // l'API attend une heure UTC
+      const url = API + '/observations_tr?code_entite=' + encodeURIComponent(codeStation)
+        + '&grandeur_hydro=H&size=200&sort=asc&date_debut_obs=' + debut
+        + '&fields=date_obs,resultat_obs';
+      const reponse = await appelerApi(url);
+      let meilleure = null, meilleurEcart = Infinity;
+      for (const obs of reponse.data || []) {
+        const ecart = Math.abs(new Date(obs.date_obs).getTime() - cible);
+        if (ecart <= 0.5 * HEURE && ecart < meilleurEcart) { meilleure = obs; meilleurEcart = ecart; }
+      }
+      return meilleure;
+    }
+
     // L'API donne la hauteur en millimètres : on l'affiche en mètres
-    function enMetres(mm) {
-      return (mm / 1000).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' m';
+    function metres(valeur) {
+      return valeur.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' m';
     }
 
     // L'API donne l'heure en temps universel (UTC) : on l'affiche à l'heure de Paris
@@ -140,8 +251,29 @@
       });
     }
 
+    // Normal / vigilance / alerte / inconnu, selon la hauteur et les seuils de la station
+    function etatStation(r) {
+      if (!r.mesure || !r.recente || !r.seuils) return 'inconnu';
+      const h = r.mesure.resultat_obs / 1000;
+      if (h >= r.seuils.alerte) return 'alerte';
+      if (h >= r.seuils.vigilance) return 'vigilance';
+      return 'normal';
+    }
+
+    // Texte de tendance : flèche + écart en cm
+    function texteTendance(r) {
+      if (!r.precedente) return 'Tendance sur ' + TENDANCE_HEURES + ' h : indisponible';
+      const ecartCm = Math.round((r.mesure.resultat_obs - r.precedente.resultat_obs) / 10);
+      const fleche = ecartCm > 0 ? '↑' : ecartCm < 0 ? '↓' : '→';
+      const signe = ecartCm > 0 ? '+' : ecartCm < 0 ? '−' : '';
+      const mot = ecartCm > 0 ? 'en hausse' : ecartCm < 0 ? 'en baisse' : 'stable';
+      return 'Tendance sur ' + TENDANCE_HEURES + ' h : ' + fleche + ' ' + signe + Math.abs(ecartCm) + ' cm (' + mot + ')';
+    }
+
     // Construit le contenu de la bulle (sans insérer de HTML venant de l'API)
-    function contenuBulle(station, mesure, erreurMesure) {
+    function contenuBulle(r) {
+      const { station, mesure, seuils } = r;
+      const e = ETATS[r.etat];
       const div = document.createElement('div');
       div.className = 'bulle';
       const ajouter = (balise, texte, classe) => {
@@ -149,16 +281,32 @@
         el.textContent = texte;
         if (classe) el.className = classe;
         div.appendChild(el);
+        return el;
       };
       ajouter('h3', station.libelle_station || station.code_station);
       ajouter('p', 'Cours d’eau : ' + (station.libelle_cours_eau || 'non renseigné'));
+
       if (mesure) {
-        ajouter('p', 'Hauteur : ' + enMetres(mesure.resultat_obs), 'hauteur');
+        const ligne = ajouter('p', 'Hauteur : ' + metres(mesure.resultat_obs / 1000), 'hauteur');
+        const pastille = document.createElement('span');
+        pastille.className = 'pastille';
+        pastille.style.background = e.couleur;
+        pastille.textContent = r.etat === 'inconnu' ? (seuils ? 'Mesure ancienne' : 'Pas de seuil') : e.libelle;
+        ligne.appendChild(pastille);
+        ajouter('p', texteTendance(r));
         ajouter('p', 'Mesure du ' + heureDeParis(mesure.date_obs) + ' (heure de Paris)');
-      } else if (erreurMesure) {
+        if (!r.recente) ajouter('p', 'Mesure de plus de ' + MESURE_RECENTE_HEURES + ' h : état non évalué.', 'gris');
+      } else if (r.erreur) {
         ajouter('p', 'Hauteur indisponible : le service Hub’Eau n’a pas répondu.', 'gris');
       } else {
         ajouter('p', 'Pas de mesure de hauteur sur le dernier mois.', 'gris');
+      }
+
+      if (seuils) {
+        ajouter('p', 'Seuils : vigilance ' + metres(seuils.vigilance) + ' · alerte ' + metres(seuils.alerte));
+        ajouter('p', 'Seuils de démo, non officiels', 'demo');
+      } else {
+        ajouter('p', 'Aucun seuil défini pour cette station.', 'gris');
       }
       ajouter('p', 'Code station : ' + station.code_station, 'gris');
       return div;
@@ -174,6 +322,22 @@
       bouton.addEventListener('click', chargerStations);
       message.append(p, bouton);
       message.hidden = false;
+    }
+
+    // Récupère tout ce qu'il faut savoir sur une station (sans jamais faire échouer les autres)
+    async function infosStation(station) {
+      const r = { station, seuils: SEUILS[station.code_station] || null, mesure: null, precedente: null, recente: false, erreur: false };
+      try {
+        r.mesure = await derniereHauteur(station.code_station);
+      } catch (e) {
+        r.erreur = true;
+      }
+      if (r.mesure) {
+        r.recente = Date.now() - new Date(r.mesure.date_obs).getTime() <= MESURE_RECENTE_HEURES * HEURE;
+        try { r.precedente = await hauteurPrecedente(station.code_station, r.mesure); } catch (e) { /* tendance indisponible */ }
+      }
+      r.etat = etatStation(r);
+      return r;
     }
 
     async function chargerStations() {
@@ -200,30 +364,33 @@
         return;
       }
 
-      // 2. Dernière hauteur de chaque station (appels en parallèle)
-      const resultats = await Promise.all(stations.map(async station => {
-        try { return { station, mesure: await derniereHauteur(station.code_station), erreur: false }; }
-        catch (e) { return { station, mesure: null, erreur: true }; }
-      }));
+      // 2. Dernière hauteur et hauteur d'il y a 3 h, pour chaque station (en parallèle)
+      const resultats = await Promise.all(stations.map(infosStation));
 
-      // 3. Un marqueur par station : bleu si mesure, gris sinon (les bleus dessinés en dernier, donc au-dessus)
-      resultats.sort((a, b) => (a.mesure ? 1 : 0) - (b.mesure ? 1 : 0));
+      // 3. Un marqueur par station ; les plus graves sont dessinés en dernier, donc au-dessus
+      const ordre = { inconnu: 0, normal: 1, vigilance: 2, alerte: 3 };
+      resultats.sort((a, b) => ordre[a.etat] - ordre[b.etat]);
       for (const r of resultats) {
         L.circleMarker([r.station.latitude_station, r.station.longitude_station], {
-          radius: r.mesure ? 9 : 7,
+          radius: r.etat === 'inconnu' ? 7 : 9,
           color: '#fff',
           weight: 2,
-          fillColor: r.mesure ? '#1565c0' : '#8a94a3',
+          fillColor: ETATS[r.etat].hexa,
           fillOpacity: 0.95
         })
-          .bindPopup(contenuBulle(r.station, r.mesure, r.erreur))
+          .bindPopup(contenuBulle(r))
           .addTo(calqueStations);
       }
 
-      const avecMesure = resultats.filter(r => r.mesure).length;
-      const enErreur = resultats.filter(r => r.erreur).length;
-      etat.textContent = stations.length + ' stations · ' + avecMesure + ' avec hauteur';
-      if (enErreur === resultats.length) {
+      // 4. Résumé dans le bandeau
+      const compte = n => resultats.filter(r => r.etat === n).length;
+      const morceaux = [stations.length + ' stations'];
+      if (compte('alerte')) morceaux.push(compte('alerte') + ' alerte');
+      if (compte('vigilance')) morceaux.push(compte('vigilance') + ' vigilance');
+      if (!compte('alerte') && !compte('vigilance')) morceaux.push(compte('normal') + ' normales');
+      etat.textContent = morceaux.join(' · ');
+
+      if (resultats.every(r => r.erreur)) {
         afficherErreur('Les stations sont affichées, mais les hauteurs d’eau n’ont pas pu être chargées : '
           + 'le service Hub’Eau ne répond pas. Réessayez dans quelques minutes.');
       }
