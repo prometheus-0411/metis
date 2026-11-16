@@ -10,6 +10,16 @@
     { "nom": "Pic",     "debut_h": 22 },
     { "nom": "Décrue",  "debut_h": 31 }
   ],
+  "vigilance_crues": {
+    "note": "Chronologie FICTIVE de vigilance crues pour la démo, cohérente avec les informations scénarisées (S1 jaune à T+7 h, S2 orange à T+13 h, S6 décrue à T+36 h). Ce n'est pas une donnée Vigicrues.",
+    "chronologie": [
+      { "t_h": 0,  "niveau": "verte" },
+      { "t_h": 7,  "niveau": "jaune" },
+      { "t_h": 13, "niveau": "orange" },
+      { "t_h": 36, "niveau": "jaune" },
+      { "t_h": 44, "niveau": "verte" }
+    ]
+  },
   "stations": [
     {
       "code": "V300002001",
