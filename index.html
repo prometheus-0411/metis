@@ -67,7 +67,7 @@
       color: #fff;
       font-size: 18px;
       font-weight: 600;
-      z-index: 1000;
+      z-index: 2000;   /* au-dessus des boutons de la carte quand la page défile (ils sont à 1000) */
       box-shadow: 0 2px 6px rgba(0,0,0,.3);
       white-space: nowrap;
     }
@@ -989,6 +989,9 @@
     let positionProvisoire = null;         // endroit touché, en attente du nom
     let marqueurProvisoire = null;
 
+    // Le type est à choisir à chaque création (pas de type par défaut : évite un point créé avec le mauvais type)
+    ps.type.add(new Option('— Choisir un type —', ''));
+    ps.type.options[0].disabled = true;
     for (const [cle, t] of Object.entries(PS_TYPES)) ps.type.add(new Option(t.icone + ' ' + t.libelle, cle));
 
     function typePoint(p) { return PS_TYPES[p.type] || PS_TYPES.autre; }
@@ -1123,6 +1126,7 @@
       positionProvisoire = latlng;
       marqueurProvisoire = L.marker(latlng, { icon: iconePoint(ps.type.value, true), interactive: false }).addTo(carte);
       ps.nom.value = '';
+      ps.type.value = '';
       ps.erreur.textContent = '';
       ps.formulaire.hidden = false;
       ps.nom.focus();
@@ -1146,6 +1150,11 @@
       if (!nom) {
         ps.erreur.textContent = 'Donnez un nom au point.';
         ps.nom.focus();
+        return;
+      }
+      if (!PS_TYPES[ps.type.value]) {
+        ps.erreur.textContent = 'Choisissez un type.';
+        ps.type.focus();
         return;
       }
       if (!positionProvisoire) return;
