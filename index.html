@@ -82,15 +82,29 @@
       overflow: hidden;
       text-overflow: ellipsis;
     }
-    /* Carte : tout l'écran sous le bandeau */
-    #carte {
+    /* Mise en page sous le bandeau : carte (60 %) à gauche, main courante à droite */
+    #espace {
       position: fixed;
       top: 48px; left: 0; right: 0; bottom: 0;
+      display: flex;
+    }
+    #zone-carte {
+      position: relative;
+      flex: 0 0 60%;
+    }
+    #carte {
+      position: absolute;
+      inset: 0;
+    }
+    /* Sur téléphone (écran étroit) : la carte en haut, la main courante en dessous */
+    @media (max-width: 767px) {
+      #espace { flex-direction: column; }
+      #zone-carte { flex: 0 0 50%; }
     }
     /* Message d'erreur affiché par-dessus la carte si l'API ne répond pas */
     #message {
-      position: fixed;
-      top: 64px; left: 16px; right: 16px;
+      position: absolute;
+      top: 16px; left: 16px; right: 16px;
       max-width: 480px;
       margin: 0 auto;
       padding: 12px 16px;
@@ -137,12 +151,199 @@
     .legende .ligne { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
     .legende .rond { width: 12px; height: 12px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px rgba(0,0,0,.25); flex: none; }
     .legende .note { margin-top: 2px; font-size: 11px; font-style: italic; color: #8a4b00; }
+
+    /* Un élément marqué « hidden » reste caché, même s'il a une mise en forme flex */
+    [hidden] { display: none !important; }
+
+    /* ---------- Main courante (panneau de droite) ---------- */
+    :root {
+      --mc-fond: #f4f6f9;
+      --mc-carte: #ffffff;
+      --mc-bord: #d5dbe3;
+      --mc-texte: #1b2430;
+      --mc-discret: #5d6b7c;
+      --type-evenement: #b42318;
+      --type-decision: #1d4ed8;
+      --type-moyen: #6d28d9;
+      --type-information: #475569;
+    }
+    #panneau {
+      flex: 1 1 auto;
+      min-width: 0;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      background: var(--mc-fond);
+      color: var(--mc-texte);
+      border-left: 1px solid var(--mc-bord);
+    }
+    /* Sur téléphone : tout le panneau défile (formulaire + liste), pour laisser de la place aux entrées */
+    @media (max-width: 767px) {
+      #panneau { border-left: none; border-top: 1px solid var(--mc-bord); overflow-y: auto; }
+      #mc-liste { flex: none; overflow: visible; }
+    }
+    #panneau h2 {
+      margin: 0;
+      font-size: 16px;
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+    }
+    #mc-compte { font-size: 13px; font-weight: 400; color: var(--mc-discret); }
+    #mc-formulaire {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--mc-bord);
+      background: var(--mc-carte);
+    }
+    #mc-formulaire .rangee { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    #mc-formulaire label { font-size: 13px; color: var(--mc-discret); }
+    /* 16 px minimum : évite le zoom automatique de l'iPhone quand on touche un champ */
+    #mc-type, #mc-texte {
+      font: inherit;
+      font-size: 16px;
+      padding: 6px 8px;
+      border: 1px solid var(--mc-bord);
+      border-radius: 4px;
+      background: #fff;
+      color: var(--mc-texte);
+    }
+    #mc-type { flex: 1 1 auto; min-width: 0; }
+    #mc-texte { width: 100%; box-sizing: border-box; min-height: 60px; resize: vertical; }
+    #mc-ajouter {
+      font: inherit;
+      font-size: 15px;
+      font-weight: 600;
+      padding: 8px 16px;
+      border: none;
+      border-radius: 4px;
+      background: #1b2430;
+      color: #fff;
+      cursor: pointer;
+    }
+    #mc-ajouter:focus-visible, .mc-entree button:focus-visible, #mc-reinit:focus-visible { outline: 2px solid #1d4ed8; outline-offset: 2px; }
+    #mc-correction {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 13px;
+      padding: 4px 8px;
+      background: #fff7e0;
+      border: 1px solid #f0d58a;
+      border-radius: 4px;
+    }
+    #mc-correction button { font: inherit; font-size: 13px; border: none; background: none; color: var(--type-decision); cursor: pointer; text-decoration: underline; padding: 0; }
+    #mc-erreur { font-size: 13px; color: var(--type-evenement); }
+    #mc-avertissement { font-size: 13px; color: #8a4b00; padding: 8px 16px; background: #fff4e5; }
+    #mc-liste {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow-y: auto;
+      margin: 0;
+      padding: 12px 16px;
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    #mc-vide { color: var(--mc-discret); font-size: 14px; padding: 4px 0; }
+    .mc-entree {
+      background: var(--mc-carte);
+      border: 1px solid var(--mc-bord);
+      border-left: 4px solid var(--couleur-type);
+      border-radius: 4px;
+      padding: 8px 10px;
+      font-size: 14px;
+    }
+    .mc-entete { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 12px; color: var(--mc-discret); }
+    .mc-numero { font-weight: 700; color: var(--mc-texte); font-variant-numeric: tabular-nums; }
+    .mc-type {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-weight: 600; color: #fff;
+      background: var(--couleur-type);
+      padding: 1px 8px; border-radius: 10px;
+    }
+    .mc-heure { font-variant-numeric: tabular-nums; }
+    .mc-lien { font-size: 12px; margin-top: 4px; color: var(--mc-discret); font-style: italic; }
+    .mc-texte { margin-top: 4px; white-space: pre-wrap; overflow-wrap: anywhere; }
+    .mc-entree button {
+      margin-left: auto;
+      font: inherit; font-size: 12px;
+      border: none; background: none; padding: 0;
+      color: var(--type-decision); cursor: pointer; text-decoration: underline;
+    }
+    #mc-pied {
+      padding: 8px 16px calc(8px + env(safe-area-inset-bottom, 0px));
+      border-top: 1px solid var(--mc-bord);
+      font-size: 12px;
+      color: var(--mc-discret);
+      display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    }
+    #mc-reinit {
+      margin-left: auto;
+      font: inherit; font-size: 12px;
+      border: none; background: none; padding: 0;
+      color: var(--mc-discret); cursor: pointer; text-decoration: underline;
+    }
+    #mc-confirmation {
+      width: 100%;
+      display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+      padding: 8px;
+      background: #fdecea;
+      border: 1px solid #f3b7b0;
+      border-radius: 4px;
+      color: #7a1a12;
+      font-size: 13px;
+    }
+    #mc-confirmation button { font: inherit; font-size: 13px; padding: 4px 10px; border-radius: 4px; cursor: pointer; }
+    #mc-oui { background: #b42318; color: #fff; border: 1px solid #b42318; }
+    #mc-non { background: #fff; color: var(--mc-texte); border: 1px solid var(--mc-bord); }
   </style>
 </head>
 <body>
   <header id="bandeau">Métis — Lyon <span id="etat">Chargement des stations…</span></header>
-  <div id="carte"></div>
-  <div id="message" hidden></div>
+  <div id="espace">
+    <div id="zone-carte">
+      <div id="carte"></div>
+      <div id="message" hidden></div>
+    </div>
+
+    <!-- Main courante : journal horodaté de la gestion de crise -->
+    <aside id="panneau" aria-label="Main courante">
+      <form id="mc-formulaire" novalidate>
+        <h2>Main courante <span id="mc-compte"></span></h2>
+        <div class="rangee">
+          <label for="mc-type">Type</label>
+          <select id="mc-type">
+            <option value="evenement">Événement</option>
+            <option value="decision">Décision</option>
+            <option value="moyen">Moyen engagé</option>
+            <option value="information">Information</option>
+          </select>
+        </div>
+        <div id="mc-correction" hidden>
+          <span id="mc-correction-texte"></span>
+          <button type="button" id="mc-correction-annuler">Annuler</button>
+        </div>
+        <textarea id="mc-texte" rows="2" maxlength="1000" placeholder="Que se passe-t-il ? (ex. : Montée de la Saône, PC activé)"></textarea>
+        <div class="rangee">
+          <button type="submit" id="mc-ajouter">Ajouter</button>
+          <span id="mc-erreur" role="alert"></span>
+        </div>
+      </form>
+      <div id="mc-avertissement" hidden></div>
+      <ol id="mc-liste" aria-live="polite"></ol>
+      <div id="mc-pied">
+        <span>Entrées non modifiables. Pour corriger : « Corriger ».</span>
+        <button type="button" id="mc-reinit">Réinitialiser (démo)</button>
+        <div id="mc-confirmation" hidden>
+          <span id="mc-confirmation-texte"></span>
+          <button type="button" id="mc-oui">Oui, tout effacer</button>
+          <button type="button" id="mc-non">Annuler</button>
+        </div>
+      </div>
+    </aside>
+  </div>
 
   <script>
     // Carte centrée sur Lyon, zoom 12
@@ -397,6 +598,210 @@
     }
 
     chargerStations();
+  </script>
+
+  <script>
+    // =====================================================================
+    //  MAIN COURANTE
+    //  - chaque entrée : numéro, type, texte, date et heure (automatiques)
+    //  - aucune modification ni suppression : on corrige par une nouvelle entrée
+    //  - conservée dans ce navigateur (localStorage), donc après rechargement
+    // =====================================================================
+    const MC_CLE = 'metis.mainCourante.v1';
+    const MC_TYPES = {
+      evenement:   { libelle: 'Événement',    icone: '⚠', couleur: 'var(--type-evenement)' },
+      decision:    { libelle: 'Décision',     icone: '✔', couleur: 'var(--type-decision)' },
+      moyen:       { libelle: 'Moyen engagé', icone: '⛟', couleur: 'var(--type-moyen)' },
+      information: { libelle: 'Information',  icone: 'ℹ', couleur: 'var(--type-information)' }
+    };
+
+    const mc = {
+      formulaire: document.getElementById('mc-formulaire'),
+      type: document.getElementById('mc-type'),
+      texte: document.getElementById('mc-texte'),
+      erreur: document.getElementById('mc-erreur'),
+      liste: document.getElementById('mc-liste'),
+      compte: document.getElementById('mc-compte'),
+      avertissement: document.getElementById('mc-avertissement'),
+      correction: document.getElementById('mc-correction'),
+      correctionTexte: document.getElementById('mc-correction-texte'),
+      reinit: document.getElementById('mc-reinit'),
+      confirmation: document.getElementById('mc-confirmation'),
+      confirmationTexte: document.getElementById('mc-confirmation-texte')
+    };
+    let entrees = [];          // la liste des entrées, de la plus ancienne à la plus récente
+    let correctionDe = null;   // numéro de l'entrée en cours de correction, ou null
+    let stockageOk = true;
+
+    function lireStockage() {
+      try {
+        const brut = localStorage.getItem(MC_CLE);
+        const donnees = brut ? JSON.parse(brut) : [];
+        return Array.isArray(donnees) ? donnees : [];
+      } catch (e) {
+        stockageOk = false;
+        return [];
+      }
+    }
+
+    function ecrireStockage() {
+      try {
+        localStorage.setItem(MC_CLE, JSON.stringify(entrees));
+        stockageOk = true;
+      } catch (e) {
+        stockageOk = false;
+      }
+      mc.avertissement.hidden = stockageOk;
+      if (!stockageOk) {
+        mc.avertissement.textContent = 'Attention : ce navigateur refuse l’enregistrement (navigation privée ?). '
+          + 'Les entrées seront perdues au rechargement de la page.';
+      }
+    }
+
+    function dateHeure(iso) {
+      // Toujours à l'heure de Paris, comme les mesures des stations
+      return new Date(iso).toLocaleString('fr-FR', {
+        timeZone: 'Europe/Paris',
+        day: '2-digit', month: '2-digit', year: 'numeric',
+        hour: '2-digit', minute: '2-digit', second: '2-digit'
+      });
+    }
+
+    // Affiche la liste, les plus récentes en haut
+    function afficherEntrees() {
+      mc.liste.textContent = '';
+      mc.compte.textContent = entrees.length ? '(' + entrees.length + ')' : '';
+      if (entrees.length === 0) {
+        const vide = document.createElement('li');
+        vide.id = 'mc-vide';
+        vide.textContent = 'Aucune entrée pour l’instant. Choisissez un type, écrivez, puis « Ajouter ».';
+        mc.liste.appendChild(vide);
+        return;
+      }
+      // Qui corrige qui (calculé à l'affichage : l'entrée d'origine n'est jamais modifiée)
+      const corrigeePar = {};
+      for (const e of entrees) if (e.corrige) (corrigeePar[e.corrige] = corrigeePar[e.corrige] || []).push(e.n);
+
+      for (const e of [...entrees].reverse()) {
+        const type = MC_TYPES[e.type] || MC_TYPES.information;
+        const li = document.createElement('li');
+        li.className = 'mc-entree';
+        li.style.setProperty('--couleur-type', type.couleur);
+
+        const entete = document.createElement('div');
+        entete.className = 'mc-entete';
+        const numero = document.createElement('span');
+        numero.className = 'mc-numero';
+        numero.textContent = '#' + e.n;
+        const badge = document.createElement('span');
+        badge.className = 'mc-type';
+        badge.textContent = type.icone + ' ' + type.libelle;
+        const heure = document.createElement('time');
+        heure.className = 'mc-heure';
+        heure.dateTime = e.date;
+        heure.textContent = dateHeure(e.date);
+        const corriger = document.createElement('button');
+        corriger.type = 'button';
+        corriger.textContent = 'Corriger';
+        corriger.addEventListener('click', () => commencerCorrection(e.n));
+        entete.append(numero, badge, heure, corriger);
+        li.appendChild(entete);
+
+        if (e.corrige) {
+          const lien = document.createElement('div');
+          lien.className = 'mc-lien';
+          lien.textContent = 'Correction de #' + e.corrige;
+          li.appendChild(lien);
+        }
+        const texte = document.createElement('div');
+        texte.className = 'mc-texte';
+        texte.textContent = e.texte;
+        li.appendChild(texte);
+
+        if (corrigeePar[e.n]) {
+          const note = document.createElement('div');
+          note.className = 'mc-lien';
+          note.textContent = 'Corrigée par ' + corrigeePar[e.n].map(n => '#' + n).join(', ');
+          li.appendChild(note);
+        }
+        mc.liste.appendChild(li);
+      }
+    }
+
+    function commencerCorrection(n) {
+      correctionDe = n;
+      mc.correctionTexte.textContent = 'Correction de #' + n;
+      mc.correction.hidden = false;
+      const origine = entrees.find(e => e.n === n);
+      if (origine) mc.type.value = origine.type;
+      mc.texte.focus();
+    }
+
+    function annulerCorrection() {
+      correctionDe = null;
+      mc.correction.hidden = true;
+    }
+
+    mc.formulaire.addEventListener('submit', ev => {
+      ev.preventDefault();
+      const texte = mc.texte.value.trim();
+      if (!texte) {
+        mc.erreur.textContent = 'Écrivez un texte avant d’ajouter.';
+        mc.texte.focus();
+        return;
+      }
+      mc.erreur.textContent = '';
+      // On relit le stockage juste avant d'ajouter (au cas où un autre onglet aurait écrit entre-temps)
+      const enStock = lireStockage();
+      if (enStock.length > entrees.length) entrees = enStock;
+      const entree = {
+        n: entrees.reduce((max, e) => Math.max(max, e.n), 0) + 1,
+        type: mc.type.value,
+        texte,
+        date: new Date().toISOString()
+      };
+      if (correctionDe) entree.corrige = correctionDe;
+      entrees.push(Object.freeze(entree));
+      ecrireStockage();
+      mc.texte.value = '';
+      annulerCorrection();
+      afficherEntrees();
+      mc.liste.scrollTop = 0;
+    });
+
+    // Ctrl+Entrée (ou Cmd+Entrée) pour ajouter sans quitter le clavier
+    mc.texte.addEventListener('keydown', ev => {
+      if (ev.key === 'Enter' && (ev.ctrlKey || ev.metaKey)) mc.formulaire.requestSubmit();
+    });
+
+    document.getElementById('mc-correction-annuler').addEventListener('click', annulerCorrection);
+
+    // Réinitialisation (démo) : demande une confirmation dans la page avant d'effacer
+    mc.reinit.addEventListener('click', () => {
+      mc.confirmationTexte.textContent = entrees.length
+        ? 'Effacer définitivement les ' + entrees.length + ' entrées de la main courante ?'
+        : 'La main courante est déjà vide.';
+      document.getElementById('mc-oui').hidden = entrees.length === 0;
+      mc.confirmation.hidden = false;
+    });
+    document.getElementById('mc-non').addEventListener('click', () => { mc.confirmation.hidden = true; });
+    document.getElementById('mc-oui').addEventListener('click', () => {
+      entrees = [];
+      try { localStorage.removeItem(MC_CLE); } catch (e) { /* rien à faire */ }
+      mc.confirmation.hidden = true;
+      annulerCorrection();
+      afficherEntrees();
+    });
+
+    // Si la main courante change dans un autre onglet du même navigateur, on se met à jour
+    window.addEventListener('storage', ev => {
+      if (ev.key === MC_CLE) { entrees = lireStockage(); afficherEntrees(); }
+    });
+
+    // Démarrage
+    entrees = lireStockage();
+    if (!stockageOk) ecrireStockage();
+    afficherEntrees();
   </script>
 </body>
 </html>
