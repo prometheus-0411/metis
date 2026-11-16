@@ -1,5 +1,6 @@
 {
   "description": "Points référencés (préparation) chargés à l'ouverture de Métis. Coordonnées des lieux publics issues d'OpenStreetMap (Nominatim), à vérifier. Le poste électrique et le site d'eau potable sont FICTIFS : nom et emplacement inventés, on ne publie pas l'emplacement d'infrastructures sensibles réelles.",
+  "suivi_automatique": "Pour certains points : station_reference (code d'une station affichée) et hauteur_critique (en m). Quand la station atteint cette hauteur, le point passe à « Menacé ». VALEURS DE DÉMO, NON OFFICIELLES : réglées pour le scénario de démonstration, elles ne correspondent à aucune étude d'inondabilité.",
   "types_possibles": "caserne, police, mairie, prefecture, hopital, ecole, retraite, pont, gare, route, poste, eau, industriel, autre",
   "points": [
     {
@@ -16,8 +17,8 @@
       "nom": "Hôpital de la Croix-Rousse",
       "type": "hopital",
       "adresse": "103 Grande Rue de la Croix-Rousse, 69004 Lyon",
-      "lat": 45.78170,
-      "lng": 4.83090,
+      "lat": 45.7817,
+      "lng": 4.8309,
       "a_verifier": true
     },
     {
@@ -26,17 +27,21 @@
       "type": "ecole",
       "adresse": "31 rue de la Bourse, 69002 Lyon",
       "lat": 45.76585,
-      "lng": 4.83750,
-      "a_verifier": true
+      "lng": 4.8375,
+      "a_verifier": true,
+      "station_reference": "U472002001",
+      "hauteur_critique": 3.95
     },
     {
       "id": "R-RECAMIER",
       "nom": "Lycée Juliette-Récamier",
       "type": "ecole",
       "adresse": "57 rue de la Charité, 69002 Lyon",
-      "lat": 45.74950,
-      "lng": 4.83050,
-      "a_verifier": true
+      "lat": 45.7495,
+      "lng": 4.8305,
+      "a_verifier": true,
+      "station_reference": "V300002001",
+      "hauteur_critique": 3.5
     },
     {
       "id": "R-POLICE",
@@ -54,7 +59,9 @@
       "adresse": "1 place de la Comédie, 69001 Lyon",
       "lat": 45.76764,
       "lng": 4.83507,
-      "a_verifier": true
+      "a_verifier": true,
+      "station_reference": "U472002001",
+      "hauteur_critique": 4.05
     },
     {
       "id": "R-PREFECTURE",
@@ -72,25 +79,31 @@
       "adresse": "Pont Morand, entre Lyon 1er et Lyon 6e",
       "lat": 45.76862,
       "lng": 4.83957,
-      "a_verifier": true
+      "a_verifier": true,
+      "station_reference": "V300002001",
+      "hauteur_critique": 3.0
     },
     {
       "id": "R-POSTE",
       "nom": "Poste électrique Rive-Gauche (fictif)",
       "type": "poste",
       "adresse": "Emplacement fictif, rive gauche du Rhône",
-      "lat": 45.73850,
-      "lng": 4.84600,
-      "fictif": true
+      "lat": 45.7385,
+      "lng": 4.846,
+      "fictif": true,
+      "station_reference": "V300002001",
+      "hauteur_critique": 2.35
     },
     {
       "id": "R-EAU",
       "nom": "Station d'eau potable des Berges (fictif)",
       "type": "eau",
-      "adresse": "Emplacement fictif, rive gauche du Rhône",
-      "lat": 45.77900,
-      "lng": 4.86400,
-      "fictif": true
+      "adresse": "Emplacement fictif, Gerland (Lyon 7e), rive gauche du Rhône",
+      "lat": 45.733,
+      "lng": 4.838,
+      "fictif": true,
+      "station_reference": "V300002001",
+      "hauteur_critique": 3.6
     }
   ]
 }
