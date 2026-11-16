@@ -23,6 +23,7 @@
       height: 48px;
       display: flex;
       align-items: center;
+      gap: 12px;
       padding: 0 16px;
       background: #1b2430;
       color: #fff;
@@ -31,16 +32,58 @@
       z-index: 1000;
       box-shadow: 0 2px 6px rgba(0,0,0,.3);
     }
+    /* Petite ligne d'état à droite du titre (ex. « 10 stations · 5 mesurées ») */
+    #etat {
+      margin-left: auto;
+      font-size: 13px;
+      font-weight: 400;
+      color: #b8c4d4;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
     /* Carte : tout l'écran sous le bandeau */
     #carte {
       position: fixed;
       top: 48px; left: 0; right: 0; bottom: 0;
     }
+    /* Message d'erreur affiché par-dessus la carte si l'API ne répond pas */
+    #message {
+      position: fixed;
+      top: 64px; left: 16px; right: 16px;
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 12px 16px;
+      background: #fff4e5;
+      color: #5a3300;
+      border: 1px solid #f0b46a;
+      border-radius: 6px;
+      font-size: 15px;
+      line-height: 1.4;
+      z-index: 1000;
+      box-shadow: 0 2px 8px rgba(0,0,0,.25);
+    }
+    #message button {
+      margin-top: 8px;
+      padding: 6px 12px;
+      font: inherit;
+      border: 1px solid #c98a3a;
+      border-radius: 4px;
+      background: #fff;
+      color: #5a3300;
+      cursor: pointer;
+    }
+    /* Contenu de la bulle d'une station */
+    .bulle h3 { margin: 0 0 4px; font-size: 15px; }
+    .bulle p { margin: 2px 0; font-size: 14px; }
+    .bulle .hauteur { font-size: 18px; font-weight: 700; }
+    .bulle .gris { color: #666; }
   </style>
 </head>
 <body>
-  <header id="bandeau">Métis — Lyon</header>
+  <header id="bandeau">Métis — Lyon <span id="etat">Chargement des stations…</span></header>
   <div id="carte"></div>
+  <div id="message" hidden></div>
 
   <script>
     // Carte centrée sur Lyon, zoom 12
@@ -50,7 +93,143 @@
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">les contributeurs d’OpenStreetMap</a>'
+        + ' · Hauteurs d’eau : <a href="https://hubeau.eaufrance.fr/page/api-hydrometrie">Hub’Eau</a>'
     }).addTo(carte);
+
+    // ---------- Stations hydrométriques (API Hub'Eau Hydrométrie v2) ----------
+    // Doc : https://hubeau.eaufrance.fr/page/api-hydrometrie
+    const API = 'https://hubeau.eaufrance.fr/api/v2/hydrometrie';
+    const ZONE = '4.70,45.65,5.00,45.85'; // longitude min, latitude min, longitude max, latitude max
+    const DELAI_MAX = 15000;              // au-delà de 15 s sans réponse, on considère que l'API ne répond pas
+
+    const etat = document.getElementById('etat');
+    const message = document.getElementById('message');
+    const calqueStations = L.layerGroup().addTo(carte);
+
+    // Appelle l'API et renvoie la réponse JSON (erreur si pas de réponse ou réponse invalide)
+    async function appelerApi(url) {
+      const controle = new AbortController();
+      const minuteur = setTimeout(() => controle.abort(), DELAI_MAX);
+      try {
+        const reponse = await fetch(url, { signal: controle.signal });
+        if (!reponse.ok) throw new Error('code ' + reponse.status);
+        return await reponse.json();
+      } finally {
+        clearTimeout(minuteur);
+      }
+    }
+
+    // Dernière hauteur d'eau (grandeur H) d'une station, ou null s'il n'y en a pas
+    async function derniereHauteur(codeStation) {
+      const url = API + '/observations_tr?code_entite=' + encodeURIComponent(codeStation)
+        + '&grandeur_hydro=H&size=1&sort=desc&fields=code_station,date_obs,resultat_obs';
+      const reponse = await appelerApi(url);
+      return (reponse.data && reponse.data[0]) || null;
+    }
+
+    // L'API donne la hauteur en millimètres : on l'affiche en mètres
+    function enMetres(mm) {
+      return (mm / 1000).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' m';
+    }
+
+    // L'API donne l'heure en temps universel (UTC) : on l'affiche à l'heure de Paris
+    function heureDeParis(dateIso) {
+      return new Date(dateIso).toLocaleString('fr-FR', {
+        timeZone: 'Europe/Paris', day: '2-digit', month: '2-digit', year: 'numeric',
+        hour: '2-digit', minute: '2-digit'
+      });
+    }
+
+    // Construit le contenu de la bulle (sans insérer de HTML venant de l'API)
+    function contenuBulle(station, mesure, erreurMesure) {
+      const div = document.createElement('div');
+      div.className = 'bulle';
+      const ajouter = (balise, texte, classe) => {
+        const el = document.createElement(balise);
+        el.textContent = texte;
+        if (classe) el.className = classe;
+        div.appendChild(el);
+      };
+      ajouter('h3', station.libelle_station || station.code_station);
+      ajouter('p', 'Cours d’eau : ' + (station.libelle_cours_eau || 'non renseigné'));
+      if (mesure) {
+        ajouter('p', 'Hauteur : ' + enMetres(mesure.resultat_obs), 'hauteur');
+        ajouter('p', 'Mesure du ' + heureDeParis(mesure.date_obs) + ' (heure de Paris)');
+      } else if (erreurMesure) {
+        ajouter('p', 'Hauteur indisponible : le service Hub’Eau n’a pas répondu.', 'gris');
+      } else {
+        ajouter('p', 'Pas de mesure de hauteur sur le dernier mois.', 'gris');
+      }
+      ajouter('p', 'Code station : ' + station.code_station, 'gris');
+      return div;
+    }
+
+    function afficherErreur(texte) {
+      message.textContent = '';
+      const p = document.createElement('div');
+      p.textContent = texte;
+      const bouton = document.createElement('button');
+      bouton.type = 'button';
+      bouton.textContent = 'Réessayer';
+      bouton.addEventListener('click', chargerStations);
+      message.append(p, bouton);
+      message.hidden = false;
+    }
+
+    async function chargerStations() {
+      message.hidden = true;
+      calqueStations.clearLayers();
+      etat.textContent = 'Chargement des stations…';
+
+      // 1. Liste des stations en service dans la zone
+      let stations;
+      try {
+        const reponse = await appelerApi(API + '/referentiel/stations?bbox=' + ZONE
+          + '&en_service=1&format=json&size=200'
+          + '&fields=code_station,libelle_station,libelle_cours_eau,longitude_station,latitude_station');
+        stations = (reponse.data || []).filter(s => s.longitude_station != null && s.latitude_station != null);
+      } catch (e) {
+        etat.textContent = 'Stations indisponibles';
+        afficherErreur('Les stations hydrométriques n’ont pas pu être chargées : le service Hub’Eau ne répond pas. '
+          + 'La carte reste utilisable. Réessayez dans quelques minutes.');
+        return;
+      }
+      if (stations.length === 0) {
+        etat.textContent = 'Aucune station';
+        afficherErreur('Hub’Eau ne signale aucune station hydrométrique en service dans la zone.');
+        return;
+      }
+
+      // 2. Dernière hauteur de chaque station (appels en parallèle)
+      const resultats = await Promise.all(stations.map(async station => {
+        try { return { station, mesure: await derniereHauteur(station.code_station), erreur: false }; }
+        catch (e) { return { station, mesure: null, erreur: true }; }
+      }));
+
+      // 3. Un marqueur par station : bleu si mesure, gris sinon (les bleus dessinés en dernier, donc au-dessus)
+      resultats.sort((a, b) => (a.mesure ? 1 : 0) - (b.mesure ? 1 : 0));
+      for (const r of resultats) {
+        L.circleMarker([r.station.latitude_station, r.station.longitude_station], {
+          radius: r.mesure ? 9 : 7,
+          color: '#fff',
+          weight: 2,
+          fillColor: r.mesure ? '#1565c0' : '#8a94a3',
+          fillOpacity: 0.95
+        })
+          .bindPopup(contenuBulle(r.station, r.mesure, r.erreur))
+          .addTo(calqueStations);
+      }
+
+      const avecMesure = resultats.filter(r => r.mesure).length;
+      const enErreur = resultats.filter(r => r.erreur).length;
+      etat.textContent = stations.length + ' stations · ' + avecMesure + ' avec hauteur';
+      if (enErreur === resultats.length) {
+        afficherErreur('Les stations sont affichées, mais les hauteurs d’eau n’ont pas pu être chargées : '
+          + 'le service Hub’Eau ne répond pas. Réessayez dans quelques minutes.');
+      }
+    }
+
+    chargerStations();
   </script>
 </body>
 </html>
