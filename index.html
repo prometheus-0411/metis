@@ -355,12 +355,12 @@
     #zone-carte.placement #carte { cursor: crosshair; }
     /* Sur téléphone : quand on revient à la carte, elle n'est pas cachée par le bandeau */
     #zone-carte { scroll-margin-top: 48px; }
-    /* Fenêtre de création d'un point, posée en bas de la carte */
+    /* Fenêtre de création d'un point : en bas à gauche, sur la carte (ordinateur) */
     #ps-formulaire {
       position: absolute;
-      left: 12px; right: 12px; bottom: 12px;
-      max-width: 360px;
-      margin: 0 auto;
+      left: 12px; bottom: 12px;
+      width: min(360px, calc(60% - 24px));
+      box-sizing: border-box;
       z-index: 1001;
       display: flex; flex-direction: column; gap: 8px;
       padding: 12px;
@@ -396,6 +396,21 @@
       font-size: 16px; line-height: 1;
     }
     .ps-icone.provisoire { border-style: dashed; opacity: .85; }
+    /* Sur téléphone : la fenêtre de création s'insère juste sous la carte, comme un bloc de la page.
+       Posée sur la carte, elle passait sous le bandeau à l'ouverture du clavier de l'iPhone. */
+    @media (max-width: 767px) {
+      #ps-formulaire {
+        position: static;
+        width: auto;
+        border-radius: 0;
+        box-shadow: none;
+        border-top: 3px solid var(--orange);
+        border-bottom: 1px solid #d5dbe3;
+        padding: 12px 16px;
+      }
+    }
+    /* Un champ qui reçoit le clavier ne s'arrête jamais sous le bandeau */
+    input, select, textarea { scroll-margin-top: 64px; }
   </style>
 </head>
 <body>
@@ -404,9 +419,11 @@
     <div id="zone-carte">
       <div id="carte"></div>
       <div id="message" hidden></div>
+    </div>
 
-      <!-- Création d'un point sensible (s'affiche après un toucher sur la carte) -->
-      <form id="ps-formulaire" hidden novalidate>
+    <!-- Création d'un point sensible (s'affiche après un toucher sur la carte) :
+         posée sur la carte sur ordinateur, juste sous la carte sur téléphone -->
+    <form id="ps-formulaire" hidden novalidate>
         <h3>Nouveau point sensible</h3>
         <input id="ps-nom" type="text" maxlength="120" autocomplete="off"
                aria-label="Nom du point" placeholder="Nom (ex. : Hôpital Édouard-Herriot)">
@@ -420,7 +437,6 @@
           <span id="ps-erreur" role="alert"></span>
         </div>
       </form>
-    </div>
 
     <!-- Main courante : journal horodaté de la gestion de crise -->
     <aside id="panneau" aria-label="Main courante">
@@ -1129,8 +1145,28 @@
       ps.type.value = '';
       ps.erreur.textContent = '';
       ps.formulaire.hidden = false;
-      ps.nom.focus();
+      if (ECRAN_TACTILE) {
+        // Sur téléphone : on montre tout le formulaire, sans ouvrir le clavier tout seul
+        ps.formulaire.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      } else {
+        ps.nom.focus();
+      }
     }
+
+    // Écran tactile (téléphone, tablette) : le clavier ne s'ouvre que quand on touche un champ
+    const ECRAN_TACTILE = window.matchMedia('(pointer: coarse)').matches;
+
+    // iPhone : à l'ouverture du clavier, la page peut défiler et laisser le champ sous le bandeau fixe.
+    // On attend la fin de l'animation du clavier, puis on redescend la page si besoin.
+    document.addEventListener('focusin', ev => {
+      const champ = ev.target;
+      if (!champ.matches || !champ.matches('input, select, textarea')) return;
+      setTimeout(() => {
+        const basBandeau = document.getElementById('bandeau').getBoundingClientRect().bottom;
+        const haut = champ.getBoundingClientRect().top;
+        if (haut < basBandeau + 8) window.scrollBy({ top: haut - basBandeau - 16, behavior: 'smooth' });
+      }, 400);
+    });
 
     function annulerCreation() {
       if (marqueurProvisoire) marqueurProvisoire.remove();
