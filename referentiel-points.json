@@ -1,0 +1,96 @@
+{
+  "description": "Points référencés (préparation) chargés à l'ouverture de Métis. Coordonnées des lieux publics issues d'OpenStreetMap (Nominatim), à vérifier. Le poste électrique et le site d'eau potable sont FICTIFS : nom et emplacement inventés, on ne publie pas l'emplacement d'infrastructures sensibles réelles.",
+  "types_possibles": "caserne, police, mairie, prefecture, hopital, ecole, retraite, pont, gare, route, poste, eau, industriel, autre",
+  "points": [
+    {
+      "id": "R-HEH",
+      "nom": "Hôpital Édouard-Herriot",
+      "type": "hopital",
+      "adresse": "5 place d'Arsonval, 69003 Lyon",
+      "lat": 45.74347,
+      "lng": 4.88262,
+      "a_verifier": true
+    },
+    {
+      "id": "R-HCR",
+      "nom": "Hôpital de la Croix-Rousse",
+      "type": "hopital",
+      "adresse": "103 Grande Rue de la Croix-Rousse, 69004 Lyon",
+      "lat": 45.78170,
+      "lng": 4.83090,
+      "a_verifier": true
+    },
+    {
+      "id": "R-AMPERE",
+      "nom": "Lycée Ampère-Bourse",
+      "type": "ecole",
+      "adresse": "31 rue de la Bourse, 69002 Lyon",
+      "lat": 45.76585,
+      "lng": 4.83750,
+      "a_verifier": true
+    },
+    {
+      "id": "R-RECAMIER",
+      "nom": "Lycée Juliette-Récamier",
+      "type": "ecole",
+      "adresse": "57 rue de la Charité, 69002 Lyon",
+      "lat": 45.74950,
+      "lng": 4.83050,
+      "a_verifier": true
+    },
+    {
+      "id": "R-POLICE",
+      "nom": "Hôtel de police de Lyon",
+      "type": "police",
+      "adresse": "40 rue Marius-Berliet, 69008 Lyon",
+      "lat": 45.74275,
+      "lng": 4.85916,
+      "a_verifier": true
+    },
+    {
+      "id": "R-MAIRIE",
+      "nom": "Hôtel de Ville de Lyon",
+      "type": "mairie",
+      "adresse": "1 place de la Comédie, 69001 Lyon",
+      "lat": 45.76764,
+      "lng": 4.83507,
+      "a_verifier": true
+    },
+    {
+      "id": "R-PREFECTURE",
+      "nom": "Préfecture du Rhône",
+      "type": "prefecture",
+      "adresse": "106 rue Pierre-Corneille, 69003 Lyon",
+      "lat": 45.76044,
+      "lng": 4.84332,
+      "a_verifier": true
+    },
+    {
+      "id": "R-PONT-MORAND",
+      "nom": "Pont Morand",
+      "type": "pont",
+      "adresse": "Pont Morand, entre Lyon 1er et Lyon 6e",
+      "lat": 45.76862,
+      "lng": 4.83957,
+      "a_verifier": true
+    },
+    {
+      "id": "R-POSTE",
+      "nom": "Poste électrique Rive-Gauche (fictif)",
+      "type": "poste",
+      "adresse": "Emplacement fictif, rive gauche du Rhône",
+      "lat": 45.73850,
+      "lng": 4.84600,
+      "fictif": true
+    },
+    {
+      "id": "R-EAU",
+      "nom": "Station d'eau potable des Berges (fictif)",
+      "type": "eau",
+      "adresse": "Emplacement fictif, rive gauche du Rhône",
+      "lat": 45.77900,
+      "lng": 4.86400,
+      "fictif": true
+    }
+  ]
+}
