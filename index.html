@@ -105,7 +105,7 @@
     /* Message d'erreur affiché par-dessus la carte si l'API ne répond pas */
     #message {
       position: absolute;
-      top: 16px; left: 16px; right: 16px;
+      top: 60px; left: 16px; right: 16px;   /* sous le bouton « + Point sensible », pour ne jamais le cacher */
       max-width: 480px;
       margin: 0 auto;
       padding: 12px 16px;
@@ -310,6 +310,92 @@
     #mc-confirmation button { font: inherit; font-size: 13px; padding: 4px 10px; border-radius: 4px; cursor: pointer; }
     #mc-oui { background: #b42318; color: #fff; border: 1px solid #b42318; }
     #mc-non { background: #fff; color: var(--mc-texte); border: 1px solid var(--mc-bord); }
+    #mc-lieu {
+      flex: 1 1 0; min-width: 0;   /* reste sur la ligne du libellé, même avec un nom long */
+      font: inherit; font-size: 16px;
+      padding: 6px 8px;
+      border: 1px solid var(--mc-bord); border-radius: 4px;
+      background: #fff; color: var(--mc-texte);
+    }
+    #mc-lieu:disabled { color: var(--mc-discret); background: var(--mc-fond); }
+    /* Lien « 📍 nom du lieu » dans une entrée de la main courante */
+    .mc-entree .mc-lieu {
+      display: inline-flex; align-items: center; gap: 4px;
+      margin: 6px 0 0;
+      padding: 2px 8px;
+      border-radius: 10px;
+      background: #eef2f7;
+      color: var(--mc-texte);
+      font-size: 12px;
+      text-decoration: none;
+    }
+    .mc-entree button.mc-lieu { cursor: pointer; border: 1px solid var(--mc-bord); }
+
+    /* ---------- Points sensibles (sur la carte) ---------- */
+    .ps-bouton {
+      font: inherit; font-size: 14px; font-weight: 600;
+      padding: 8px 12px;
+      border: none; border-radius: 4px;
+      background: #1b2430; color: #fff;
+      cursor: pointer;
+      box-shadow: 0 1px 5px rgba(0,0,0,.3);
+    }
+    .ps-bouton.actif { background: var(--orange); }
+    .ps-bouton:focus-visible { outline: 2px solid #1d4ed8; outline-offset: 2px; }
+    .ps-aide {
+      margin-top: 6px;
+      max-width: 200px;
+      padding: 6px 10px;
+      background: rgba(255,255,255,.95);
+      border-radius: 4px;
+      box-shadow: 0 1px 5px rgba(0,0,0,.3);
+      font-size: 13px;
+      color: #222;
+    }
+    #zone-carte.placement #carte { cursor: crosshair; }
+    /* Sur téléphone : quand on revient à la carte, elle n'est pas cachée par le bandeau */
+    #zone-carte { scroll-margin-top: 48px; }
+    /* Fenêtre de création d'un point, posée en bas de la carte */
+    #ps-formulaire {
+      position: absolute;
+      left: 12px; right: 12px; bottom: 12px;
+      max-width: 360px;
+      margin: 0 auto;
+      z-index: 1001;
+      display: flex; flex-direction: column; gap: 8px;
+      padding: 12px;
+      background: #fff;
+      color: #1b2430;
+      border-radius: 6px;
+      box-shadow: 0 2px 10px rgba(0,0,0,.35);
+    }
+    #ps-formulaire h3 { margin: 0; font-size: 15px; }
+    #ps-formulaire .rangee { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    #ps-formulaire label { font-size: 13px; color: #5d6b7c; }
+    #ps-nom, #ps-type {
+      font: inherit; font-size: 16px;
+      padding: 6px 8px;
+      border: 1px solid #d5dbe3; border-radius: 4px;
+      background: #fff; color: #1b2430;
+    }
+    #ps-nom { width: 100%; box-sizing: border-box; }
+    #ps-type { flex: 1 1 auto; min-width: 0; }
+    #ps-creer, #ps-annuler { font: inherit; font-size: 15px; padding: 8px 14px; border-radius: 4px; cursor: pointer; }
+    #ps-creer { font-weight: 600; background: #1b2430; color: #fff; border: 1px solid #1b2430; }
+    #ps-annuler { background: #fff; color: #1b2430; border: 1px solid #d5dbe3; }
+    #ps-erreur { font-size: 13px; color: #b42318; }
+    /* Icône d'un point sensible sur la carte */
+    .ps-icone {
+      display: flex; align-items: center; justify-content: center;
+      width: 30px; height: 30px;
+      box-sizing: border-box;
+      border-radius: 50%;
+      background: #fff;
+      border: 2px solid #1b2430;
+      box-shadow: 0 1px 4px rgba(0,0,0,.4);
+      font-size: 16px; line-height: 1;
+    }
+    .ps-icone.provisoire { border-style: dashed; opacity: .85; }
   </style>
 </head>
 <body>
@@ -318,6 +404,22 @@
     <div id="zone-carte">
       <div id="carte"></div>
       <div id="message" hidden></div>
+
+      <!-- Création d'un point sensible (s'affiche après un toucher sur la carte) -->
+      <form id="ps-formulaire" hidden novalidate>
+        <h3>Nouveau point sensible</h3>
+        <input id="ps-nom" type="text" maxlength="120" autocomplete="off"
+               aria-label="Nom du point" placeholder="Nom (ex. : Hôpital Édouard-Herriot)">
+        <div class="rangee">
+          <label for="ps-type">Type</label>
+          <select id="ps-type"></select>
+        </div>
+        <div class="rangee">
+          <button type="submit" id="ps-creer">Créer le point</button>
+          <button type="button" id="ps-annuler">Annuler</button>
+          <span id="ps-erreur" role="alert"></span>
+        </div>
+      </form>
     </div>
 
     <!-- Main courante : journal horodaté de la gestion de crise -->
@@ -331,6 +433,12 @@
             <option value="decision">Décision</option>
             <option value="moyen">Moyen engagé</option>
             <option value="information">Information</option>
+          </select>
+        </div>
+        <div class="rangee">
+          <label for="mc-lieu">Lieu</label>
+          <select id="mc-lieu">
+            <option value="">— Aucun (optionnel) —</option>
           </select>
         </div>
         <div id="mc-correction" hidden>
@@ -533,7 +641,12 @@
       bouton.type = 'button';
       bouton.textContent = 'Réessayer';
       bouton.addEventListener('click', chargerStations);
-      message.append(p, bouton);
+      const fermer = document.createElement('button');
+      fermer.type = 'button';
+      fermer.textContent = 'Fermer';
+      fermer.style.marginLeft = '8px';
+      fermer.addEventListener('click', () => { message.hidden = true; });
+      message.append(p, bouton, fermer);
       message.hidden = false;
     }
 
@@ -637,6 +750,7 @@
       avertissement: document.getElementById('mc-avertissement'),
       correction: document.getElementById('mc-correction'),
       correctionTexte: document.getElementById('mc-correction-texte'),
+      lieu: document.getElementById('mc-lieu'),
       reinit: document.getElementById('mc-reinit'),
       confirmation: document.getElementById('mc-confirmation'),
       confirmationTexte: document.getElementById('mc-confirmation-texte')
@@ -730,6 +844,20 @@
         texte.textContent = e.texte;
         li.appendChild(texte);
 
+        // Lieu lié : « 📍 nom », qu'on touche pour voir le point sur la carte
+        if (e.lieu) {
+          const p = points.find(x => x.id === e.lieu);
+          const lieu = document.createElement(p ? 'button' : 'span');
+          lieu.className = 'mc-lieu';
+          lieu.textContent = '📍 ' + (p ? p.nom : 'lieu inconnu');
+          if (p) {
+            lieu.type = 'button';
+            lieu.title = 'Voir ce lieu sur la carte';
+            lieu.addEventListener('click', () => montrerPoint(p.id));
+          }
+          li.appendChild(lieu);
+        }
+
         if (corrigeePar[e.n]) {
           const note = document.createElement('div');
           note.className = 'mc-lien';
@@ -745,7 +873,10 @@
       mc.correctionTexte.textContent = 'Correction de #' + n;
       mc.correction.hidden = false;
       const origine = entrees.find(e => e.n === n);
-      if (origine) mc.type.value = origine.type;
+      if (origine) {
+        mc.type.value = origine.type;
+        mc.lieu.value = origine.lieu && points.some(p => p.id === origine.lieu) ? origine.lieu : '';
+      }
       mc.texte.focus();
     }
 
@@ -763,23 +894,34 @@
         return;
       }
       mc.erreur.textContent = '';
+      ajouterEntree({ type: mc.type.value, texte, corrige: correctionDe, lieu: mc.lieu.value || null });
+      mc.texte.value = '';
+      mc.lieu.value = '';
+      annulerCorrection();
+    });
+
+    // Ajoute une entrée (depuis le formulaire, ou automatiquement à la création d'un point)
+    function ajouterEntree({ type, texte, corrige, lieu }) {
       // On relit le stockage juste avant d'ajouter (au cas où un autre onglet aurait écrit entre-temps)
       const enStock = lireStockage();
       if (enStock.length > entrees.length) entrees = enStock;
       const entree = {
         n: entrees.reduce((max, e) => Math.max(max, e.n), 0) + 1,
-        type: mc.type.value,
+        type,
         texte,
         date: new Date().toISOString()
       };
-      if (correctionDe) entree.corrige = correctionDe;
+      if (corrige) entree.corrige = corrige;
+      if (lieu) entree.lieu = lieu;
       entrees.push(Object.freeze(entree));
       ecrireStockage();
-      mc.texte.value = '';
-      annulerCorrection();
       afficherEntrees();
       mc.liste.scrollTop = 0;
-    });
+      // Si la fenêtre du lieu est ouverte sur la carte, on la met à jour (liste des entrées liées)
+      const m = lieu && marqueursPoints[lieu];
+      if (m && m.isPopupOpen()) m.getPopup().update();
+      return entree;
+    }
 
     // Ctrl+Entrée (ou Cmd+Entrée) pour ajouter sans quitter le clavier
     mc.texte.addEventListener('keydown', ev => {
@@ -790,27 +932,253 @@
 
     // Réinitialisation (démo) : demande une confirmation dans la page avant d'effacer
     mc.reinit.addEventListener('click', () => {
-      mc.confirmationTexte.textContent = entrees.length
-        ? 'Effacer définitivement les ' + entrees.length + ' entrées de la main courante ?'
-        : 'La main courante est déjà vide.';
-      document.getElementById('mc-oui').hidden = entrees.length === 0;
+      const vide = entrees.length === 0 && points.length === 0;
+      mc.confirmationTexte.textContent = vide
+        ? 'La main courante est déjà vide.'
+        : 'Effacer définitivement les ' + entrees.length + ' entrées de la main courante'
+          + (points.length ? ' et les ' + points.length + ' points sensibles' : '') + ' ?';
+      document.getElementById('mc-oui').hidden = vide;
       mc.confirmation.hidden = false;
     });
     document.getElementById('mc-non').addEventListener('click', () => { mc.confirmation.hidden = true; });
     document.getElementById('mc-oui').addEventListener('click', () => {
       entrees = [];
+      points = [];
       try { localStorage.removeItem(MC_CLE); } catch (e) { /* rien à faire */ }
+      try { localStorage.removeItem(PS_CLE); } catch (e) { /* rien à faire */ }
       mc.confirmation.hidden = true;
       annulerCorrection();
+      arreterPlacement();
+      annulerCreation();
+      afficherPoints();
       afficherEntrees();
     });
 
-    // Si la main courante change dans un autre onglet du même navigateur, on se met à jour
+    // Si la main courante ou les points changent dans un autre onglet du même navigateur, on se met à jour
     window.addEventListener('storage', ev => {
       if (ev.key === MC_CLE) { entrees = lireStockage(); afficherEntrees(); }
+      if (ev.key === PS_CLE) { points = lirePoints(); afficherPoints(); afficherEntrees(); }
+    });
+
+    // =====================================================================
+    //  POINTS SENSIBLES
+    //  - « + Point sensible », puis un toucher sur la carte place le point
+    //  - nom + type (Hôpital, École, Poste électrique, Autre)
+    //  - conservés dans ce navigateur, effacés par « Réinitialiser (démo) »
+    //  - chaque création ajoute une entrée « Information » à la main courante
+    // =====================================================================
+    const PS_CLE = 'metis.pointsSensibles.v1';
+    const PS_TYPES = {
+      hopital: { libelle: 'Hôpital',          icone: '🏥' },
+      ecole:   { libelle: 'École',            icone: '🏫' },
+      poste:   { libelle: 'Poste électrique', icone: '⚡' },
+      autre:   { libelle: 'Autre',            icone: '📌' }
+    };
+    const ps = {
+      zone: document.getElementById('zone-carte'),
+      formulaire: document.getElementById('ps-formulaire'),
+      nom: document.getElementById('ps-nom'),
+      type: document.getElementById('ps-type'),
+      erreur: document.getElementById('ps-erreur'),
+      annuler: document.getElementById('ps-annuler')
+    };
+    let points = [];                       // les points, du plus ancien au plus récent
+    const marqueursPoints = {};            // identifiant du point → son marqueur sur la carte
+    const calquePoints = L.layerGroup().addTo(carte);
+    let placementActif = false;            // vrai entre « + Point sensible » et le toucher sur la carte
+    let positionProvisoire = null;         // endroit touché, en attente du nom
+    let marqueurProvisoire = null;
+
+    for (const [cle, t] of Object.entries(PS_TYPES)) ps.type.add(new Option(t.icone + ' ' + t.libelle, cle));
+
+    function typePoint(p) { return PS_TYPES[p.type] || PS_TYPES.autre; }
+
+    function lirePoints() {
+      try {
+        const brut = localStorage.getItem(PS_CLE);
+        const donnees = brut ? JSON.parse(brut) : [];
+        return Array.isArray(donnees) ? donnees : [];
+      } catch (e) {
+        return [];
+      }
+    }
+
+    function ecrirePoints() {
+      try { localStorage.setItem(PS_CLE, JSON.stringify(points)); } catch (e) { stockageOk = false; }
+    }
+
+    // Icône ronde avec l'emoji du type (le HTML ne contient que nos propres emojis, jamais le texte saisi)
+    function iconePoint(type, provisoire) {
+      const t = PS_TYPES[type] || PS_TYPES.autre;
+      return L.divIcon({
+        className: '',
+        html: '<div class="ps-icone' + (provisoire ? ' provisoire' : '') + '">' + t.icone + '</div>',
+        iconSize: [30, 30],
+        iconAnchor: [15, 15],
+        popupAnchor: [0, -15]
+      });
+    }
+
+    // Fenêtre d'un point : nom, type, date d'ajout, numéros des entrées liées
+    function bullePoint(p) {
+      const t = typePoint(p);
+      const div = document.createElement('div');
+      div.className = 'bulle';
+      const ajouter = (balise, texte, classe) => {
+        const el = document.createElement(balise);
+        el.textContent = texte;
+        if (classe) el.className = classe;
+        div.appendChild(el);
+      };
+      ajouter('h3', t.icone + ' ' + p.nom);
+      ajouter('p', 'Type : ' + t.libelle);
+      ajouter('p', 'Ajouté le ' + dateHeure(p.date));
+      const liees = entrees.filter(e => e.lieu === p.id).map(e => '#' + e.n);
+      ajouter('p', 'Entrées liées : ' + (liees.length ? liees.join(', ') : 'aucune'));
+      ajouter('p', 'Point sensible ' + p.id, 'gris');
+      return div;
+    }
+
+    function afficherPoints() {
+      calquePoints.clearLayers();
+      for (const id in marqueursPoints) delete marqueursPoints[id];
+      for (const p of points) {
+        marqueursPoints[p.id] = L.marker([p.lat, p.lng], { icon: iconePoint(p.type), title: p.nom, zIndexOffset: 500 })
+          // contenu recalculé à chaque ouverture ; la fenêtre s'ouvre sous le bouton « + Point sensible »
+          .bindPopup(() => bullePoint(p), { autoPanPaddingTopLeft: L.point(10, 70), autoPanPaddingBottomRight: L.point(10, 10) })
+          .addTo(calquePoints);
+      }
+      remplirMenuLieu();
+    }
+
+    // Menu « Lieu » du formulaire de la main courante
+    function remplirMenuLieu() {
+      const choix = mc.lieu.value;
+      mc.lieu.textContent = '';
+      mc.lieu.add(new Option(points.length ? '— Aucun (optionnel) —' : '— Aucun point sensible —', ''));
+      for (const p of points) mc.lieu.add(new Option(typePoint(p).icone + ' ' + p.nom, p.id));
+      mc.lieu.value = points.some(p => p.id === choix) ? choix : '';
+      mc.lieu.disabled = points.length === 0;
+    }
+
+    // Depuis une entrée : on revient à la carte, centrée sur le point, fenêtre ouverte
+    function montrerPoint(id) {
+      const m = marqueursPoints[id];
+      if (!m) return;
+      ps.zone.scrollIntoView({ behavior: 'smooth', block: 'start' });  // sur téléphone, la carte est plus haut
+      carte.setView(m.getLatLng(), Math.max(carte.getZoom(), 15));
+      m.openPopup();
+    }
+
+    // Bouton « + Point sensible », en haut à droite de la carte
+    let boutonPoint, aidePoint;
+    const controlePoint = L.control({ position: 'topright' });
+    controlePoint.onAdd = function () {
+      const div = L.DomUtil.create('div');
+      boutonPoint = document.createElement('button');
+      boutonPoint.type = 'button';
+      boutonPoint.className = 'ps-bouton';
+      boutonPoint.textContent = '+ Point sensible';
+      boutonPoint.setAttribute('aria-pressed', 'false');
+      aidePoint = document.createElement('div');
+      aidePoint.className = 'ps-aide';
+      aidePoint.textContent = 'Touchez la carte à l’endroit du point.';
+      aidePoint.hidden = true;
+      div.append(boutonPoint, aidePoint);
+      L.DomEvent.disableClickPropagation(div);   // toucher le bouton ne doit pas placer de point
+      boutonPoint.addEventListener('click', () => (placementActif ? arreterPlacement() : demarrerPlacement()));
+      return div;
+    };
+    controlePoint.addTo(carte);
+
+    function demarrerPlacement() {
+      annulerCreation();
+      placementActif = true;
+      boutonPoint.classList.add('actif');
+      boutonPoint.textContent = 'Annuler le placement';
+      boutonPoint.setAttribute('aria-pressed', 'true');
+      aidePoint.hidden = false;
+      ps.zone.classList.add('placement');
+    }
+
+    function arreterPlacement() {
+      placementActif = false;
+      if (!boutonPoint) return;
+      boutonPoint.classList.remove('actif');
+      boutonPoint.textContent = '+ Point sensible';
+      boutonPoint.setAttribute('aria-pressed', 'false');
+      aidePoint.hidden = true;
+      ps.zone.classList.remove('placement');
+    }
+
+    // Le toucher sur la carte (un seul) qui place le point
+    carte.on('click', ev => {
+      if (!placementActif) return;
+      carte.closePopup();   // si on a touché une station, on n'ouvre pas sa fenêtre
+      arreterPlacement();
+      ouvrirCreation(ev.latlng);
+    });
+
+    function ouvrirCreation(latlng) {
+      positionProvisoire = latlng;
+      marqueurProvisoire = L.marker(latlng, { icon: iconePoint(ps.type.value, true), interactive: false }).addTo(carte);
+      ps.nom.value = '';
+      ps.erreur.textContent = '';
+      ps.formulaire.hidden = false;
+      ps.nom.focus();
+    }
+
+    function annulerCreation() {
+      if (marqueurProvisoire) marqueurProvisoire.remove();
+      marqueurProvisoire = null;
+      positionProvisoire = null;
+      ps.formulaire.hidden = true;
+    }
+
+    ps.type.addEventListener('change', () => {
+      if (marqueurProvisoire) marqueurProvisoire.setIcon(iconePoint(ps.type.value, true));
+    });
+    ps.annuler.addEventListener('click', annulerCreation);
+
+    ps.formulaire.addEventListener('submit', ev => {
+      ev.preventDefault();
+      const nom = ps.nom.value.trim();
+      if (!nom) {
+        ps.erreur.textContent = 'Donnez un nom au point.';
+        ps.nom.focus();
+        return;
+      }
+      if (!positionProvisoire) return;
+      // Comme pour la main courante : on relit le stockage avant d'ajouter
+      const enStock = lirePoints();
+      if (enStock.length > points.length) points = enStock;
+      const n = points.reduce((max, p) => Math.max(max, Number(String(p.id).slice(1)) || 0), 0) + 1;
+      const point = Object.freeze({
+        id: 'P' + n,
+        nom,
+        type: ps.type.value,
+        lat: Math.round(positionProvisoire.lat * 1e6) / 1e6,
+        lng: Math.round(positionProvisoire.lng * 1e6) / 1e6,
+        date: new Date().toISOString()
+      });
+      points.push(point);
+      ecrirePoints();
+      annulerCreation();
+      afficherPoints();
+      ajouterEntree({ type: 'information', texte: 'Point sensible ajouté : ' + nom, lieu: point.id });
+      marqueursPoints[point.id].openPopup();
+    });
+
+    // Échap : annule le placement ou la création en cours
+    document.addEventListener('keydown', ev => {
+      if (ev.key !== 'Escape') return;
+      if (placementActif) arreterPlacement();
+      if (!ps.formulaire.hidden) annulerCreation();
     });
 
     // Démarrage
+    points = lirePoints();
+    afficherPoints();
     entrees = lireStockage();
     if (!stockageOk) ecrireStockage();
     afficherEntrees();
