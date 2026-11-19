@@ -215,6 +215,19 @@
     .legende .rond { width: 12px; height: 12px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px rgba(0,0,0,.25); flex: none; }
     .legende .note { margin-top: 2px; font-size: 11px; font-style: italic; color: #8a4b00; }
 
+    /* Bouton « Recentrer » sous le zoom : refait le cadrage de la carte */
+    .recentrer-bouton {
+      display: block;
+      font: inherit; font-size: 13px; font-weight: 600;
+      height: 30px; padding: 0 8px;
+      background: #fff; color: #1b2430;
+      border: 2px solid rgba(0,0,0,.2); border-radius: 4px;
+      cursor: pointer; background-clip: padding-box;
+    }
+    .recentrer-bouton:hover { background: #f4f6f9; }
+    .recentrer-bouton:focus-visible { outline: 2px solid #1d4ed8; outline-offset: 2px; }
+    @media (pointer: coarse) { .recentrer-bouton { height: 44px; padding: 0 10px; font-size: 14px; } }
+
     /* Un élément marqué « hidden » reste caché, même s'il a une mise en forme flex */
     [hidden] { display: none !important; }
 
@@ -912,6 +925,7 @@
       stations: null      // décompte des stations du dernier chargement réussi
     };
     const majSyntheseSiPrete = () => { if (typeof majSynthese === 'function') majSynthese(); };
+    let stationsEssayees = false;   // vrai après le premier essai de chargement (pour le cadrage initial)
 
     // Appelle l'API et renvoie la réponse JSON (erreur si pas de réponse ou réponse invalide)
     async function appelerApi(url) {
@@ -1108,7 +1122,9 @@
         afficherStations(resultats);
       } finally {
         chargement.enCours = false;
+        stationsEssayees = true;
         majSyntheseSiPrete();
+        if (typeof tenterCadrageInitial === 'function') tenterCadrageInitial();
       }
     }
 
@@ -1656,6 +1672,42 @@
       m.openPopup();
     }
 
+    // ---------- Cadrage de la carte ----------
+    // Réel : points référencés + stations qui ont un seuil. Démo : stations du scénario + points référencés.
+    let referentielPret = false;
+    let cadrageInitialFait = false;
+    function cadrer() {
+      const lieux = referentiel.map(p => [p.lat, p.lng]);
+      if (modeDemo && scenario) {
+        for (const st of scenario.stations) lieux.push([st.lat, st.lng]);
+      } else {
+        for (const r of derniersResultats) if (r.seuils) lieux.push([r.station.latitude_station, r.station.longitude_station]);
+      }
+      if (!lieux.length) return;
+      carte.closePopup();
+      // marge : à gauche et en haut pour le zoom et « Recentrer », en bas pour la légende et les crédits
+      carte.fitBounds(L.latLngBounds(lieux), { paddingTopLeft: [64, 56], paddingBottomRight: [24, 48], maxZoom: 14 });
+    }
+    // Au chargement : une seule fois, quand les points et les stations sont là (ou que Hub'Eau a échoué)
+    function tenterCadrageInitial() {
+      if (cadrageInitialFait || modeDemo || !referentielPret || !stationsEssayees) return;
+      cadrageInitialFait = true;
+      cadrer();
+    }
+
+    // Bouton « Recentrer », sous le zoom
+    const controleRecentrer = L.control({ position: 'topleft' });
+    controleRecentrer.onAdd = function () {
+      const b = L.DomUtil.create('button', 'recentrer-bouton');
+      b.type = 'button';
+      b.textContent = 'Recentrer';
+      b.title = 'Cadrer la carte sur les points et les stations suivies';
+      L.DomEvent.disableClickPropagation(b);   // toucher le bouton ne place pas de point
+      b.addEventListener('click', cadrer);
+      return b;
+    };
+    controleRecentrer.addTo(carte);
+
     // Points référencés : fichier referentiel-points.json, à côté de index.html
     async function chargerReferentiel() {
       try {
@@ -1673,6 +1725,8 @@
       afficherPoints();
       afficherEntrees();   // les entrées liées à un point référencé affichent alors son nom
       evaluerMenaces();    // si les hauteurs réelles sont déjà connues
+      referentielPret = true;
+      tenterCadrageInitial();
     }
 
     // Bouton « + Point sensible », en haut à droite de la carte
@@ -2230,6 +2284,7 @@
       carte.removeLayer(calqueStations);     // les vraies stations sont mises de côté, pas modifiées
       calqueDemo.addTo(carte);
       nouvelleLecture();
+      cadrer();                              // stations du scénario + points référencés
       clearInterval(minuteurDemo);
       minuteurDemo = setInterval(tic, 250);
     }
@@ -2256,6 +2311,7 @@
       afficherPoints();
       afficherEntrees();
       majSynthese();
+      cadrer();                              // retour au cadrage réel
       chargerStations();                     // vraies données Hub'Eau, rechargées à jour
     }
 
