@@ -864,7 +864,7 @@
     <!-- Icône + libellé visible (le libellé sert aussi de nom pour les lecteurs d'écran) -->
     <button type="button" class="demo-btn" id="demo-lecture"><span class="demo-icone" aria-hidden="true"></span><span class="demo-libelle">Pause</span></button>
     <button type="button" class="demo-btn" id="demo-vitesse" title="Changer la vitesse"><span class="demo-icone">×1</span><span class="demo-libelle">Vitesse</span></button>
-    <button type="button" class="demo-btn" id="demo-recommencer" title="Recommencer la démo depuis le début"><span class="demo-icone" aria-hidden="true"></span><span class="demo-libelle"><span class="lib-long">Recommencer</span><span class="lib-court">Rejouer</span></span></button>
+    <button type="button" class="demo-btn" id="demo-recommencer" title="Recommencer la démo depuis le début"><span class="demo-icone" aria-hidden="true"></span><span class="demo-libelle"><span class="lib-long">Recommencer</span><span class="lib-court">Début</span></span></button>
     <button type="button" class="demo-btn" id="demo-quitter" aria-label="Quitter la démo"><span class="texte-long">Quitter la démo</span><span class="texte-court">Quitter</span></button>
   </div>
   <div id="espace">
@@ -1018,7 +1018,9 @@
     const PETIT_ECRAN = window.matchMedia('(max-width: 767px)');
 
     // Carte centrée sur Lyon, zoom 12
-    const carte = L.map('carte').setView([45.764, 4.836], 12);
+    // zoomSnap 0.25 : le cadrage peut s'arrêter au plus grand zoom qui montre tous les points
+    // (sur téléphone, le zoom entier inférieur faisait se recouvrir les icônes du centre de Lyon)
+    const carte = L.map('carte', { zoomSnap: 0.25 }).setView([45.764, 4.836], 12);
 
     // Fond OpenStreetMap, avec l'attribution obligatoire
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -2003,20 +2005,19 @@
     }
 
     // ---------- Cadrage de la carte ----------
-    // Réel : points référencés + stations qui ont un seuil. Démo : stations du scénario + points référencés.
+    // Sur les points seulement (référencés + ajoutés en crise), en réel comme en démo : la station de
+    // Couzon, à 9 km au nord, écrasait les points de Lyon. Elle reste visible en dézoomant et comptée
+    // dans le bandeau.
     let referentielPret = false;
     let cadrageInitialFait = false;
     function cadrer() {
-      const lieux = referentiel.map(p => [p.lat, p.lng]);
-      if (modeDemo && scenario) {
-        for (const st of scenario.stations) lieux.push([st.lat, st.lng]);
-      } else {
-        for (const r of derniersResultats) if (r.seuils) lieux.push([r.station.latitude_station, r.station.longitude_station]);
-      }
+      const lieux = tousPoints().map(p => [p.lat, p.lng]);
       if (!lieux.length) return;
       carte.closePopup();
       // marge : à gauche et en haut pour le zoom et « Recentrer », en bas pour la légende et les crédits
-      carte.fitBounds(L.latLngBounds(lieux), { paddingTopLeft: [64, 56], paddingBottomRight: [24, 48], maxZoom: 14 });
+      // sur téléphone, marges plus serrées en haut et en bas : la carte est basse et les points s'étalent du nord au sud
+      const marges = PETIT_ECRAN.matches ? { paddingTopLeft: [60, 44], paddingBottomRight: [20, 40] } : { paddingTopLeft: [64, 56], paddingBottomRight: [24, 48] };
+      carte.fitBounds(L.latLngBounds(lieux), { ...marges, maxZoom: 15 });
     }
     // Au chargement : une seule fois, quand les points et les stations sont là (ou que Hub'Eau a échoué)
     function tenterCadrageInitial() {
@@ -2748,7 +2749,7 @@
       carte.removeLayer(calqueStations);     // les vraies stations sont mises de côté, pas modifiées
       calqueDemo.addTo(carte);
       nouvelleLecture();
-      cadrer();                              // stations du scénario + points référencés
+      cadrer();                              // points référencés (et ajoutés en crise de la démo)
       clearInterval(minuteurDemo);
       minuteurDemo = setInterval(tic, 250);
     }
