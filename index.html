@@ -43,6 +43,10 @@
 
   <style>
     :root {
+      /* Échelles (session UX 2) : espacements et tailles de texte. Pas de valeur isolée en dehors
+         des bordures (1 à 3 px), des ombres, des 44 px de toucher et des décalages de centrage. */
+      --esp-1: 4px; --esp-2: 8px; --esp-3: 12px; --esp-4: 16px; --esp-5: 24px; --esp-6: 32px;
+      --txt-xs: 12px; --txt-sm: 14px; --txt-md: 16px; --txt-lg: 18px; --txt-xl: 24px;
       --vert: #2e7d32;
       --orange: #ef6c00;
       --rouge: #c62828;
@@ -67,31 +71,31 @@
       display: flex;
       flex-direction: column;
       justify-content: center;
-      gap: 2px;
-      padding-bottom: 6px !important;
-      padding: 0 max(16px, env(safe-area-inset-right, 0px)) 0 max(16px, env(safe-area-inset-left, 0px));
+      gap: var(--esp-1);
+      padding-bottom: var(--esp-2) !important;
+      padding: 0 max(var(--esp-4), env(safe-area-inset-right, 0px)) 0 max(var(--esp-4), env(safe-area-inset-left, 0px));
       background: #1b2430;
       color: #fff;
-      font-size: 18px;
+      font-size: var(--txt-lg);
       font-weight: 600;
       z-index: 2000;   /* au-dessus des boutons de la carte quand la page défile (ils sont à 1000) */
       box-shadow: 0 2px 6px rgba(0,0,0,.3);
       white-space: nowrap;
     }
     /* Ligne 1 : titre et boutons ; ligne 2 : synthèse (le plus grave d'abord) */
-    .ligne-titre { display: flex; align-items: center; gap: 8px; height: 36px; min-width: 0; }
+    .ligne-titre { display: flex; align-items: center; gap: var(--esp-2); height: 36px; min-width: 0; }
     .ligne-titre .titre { margin-right: auto; overflow: hidden; text-overflow: ellipsis; }
-    .ligne-synthese { display: flex; align-items: flex-start; gap: 6px; min-width: 0; }
+    .ligne-synthese { display: flex; align-items: flex-start; gap: var(--esp-2); min-width: 0; }
     /* Synthèse : deux lignes au plus ; au-delà, les éléments les moins graves passent dans « Détails » */
     #synthese {
       flex: 1 1 auto; min-width: 0;
-      display: flex; flex-wrap: wrap; align-items: center; gap: 4px 5px;
+      display: flex; flex-wrap: wrap; align-items: center; gap: var(--esp-1) var(--esp-1);
       max-height: 48px; overflow: hidden;   /* 2 lignes de pastilles de 22 px + 4 px d'écart */
     }
     .puce {
       flex: none;
-      font-size: 12px; font-weight: 600; line-height: 18px;
-      padding: 1px 8px; border-radius: 10px;
+      font-size: var(--txt-xs); font-weight: 600; line-height: 20px;
+      padding: 0 var(--esp-2); border-radius: 10px;   /* hauteur par la ligne : 22 px avec la bordure */
       white-space: nowrap;
       font-variant-numeric: tabular-nums;
       color: #d6dde6; background: #2b3747; border: 1px solid transparent;
@@ -101,7 +105,7 @@
     .puce.vigilance { color: #1b1300; background: var(--orange); }
     .puce.alerte, .puce.touche { color: #fff; background: var(--rouge); }
     .puce.evacue { color: #fff; background: var(--violet); }
-    .puce.menace { color: #ffcc99; background: transparent; border: 2px solid var(--orange); padding: 0 7px; }
+    .puce.menace { color: #ffcc99; background: transparent; border: 2px solid var(--orange); padding: 0 var(--esp-2); line-height: 18px; }
     .puce.avertissement { color: #1b1300; background: #ffb300; font-weight: 700; }
     .puce.vig-verte  { color: #fff; background: #2e7d32; }
     .puce.vig-jaune  { color: #1b1300; background: #fdd835; }
@@ -109,11 +113,12 @@
     .puce.vig-rouge  { color: #fff; background: #c62828; }
     #synthese-details-bouton, #actualiser {
       flex: none;
-      font: inherit; font-size: 12px; font-weight: 600;
-      padding: 1px 7px; border-radius: 4px; cursor: pointer;
+      font: inherit; font-size: var(--txt-xs); font-weight: 600;
+      padding: var(--esp-1) var(--esp-2); border-radius: 4px; cursor: pointer;
       background: transparent; color: #d6dde6; border: 1px solid #6b7a8c;
     }
-    #actualiser { font-size: 13px; padding: 4px 10px; }
+    #synthese-details-bouton { padding: 0 var(--esp-2); line-height: 20px; }
+    #actualiser { font-size: var(--txt-sm); padding: var(--esp-1) var(--esp-3); }
     #actualiser:disabled { opacity: .6; cursor: wait; }
     #synthese-details-bouton:focus-visible, #actualiser:focus-visible { outline: 2px solid #8ab4ff; outline-offset: 2px; }
     /* Liste complète de la synthèse, sous les bandeaux */
@@ -122,15 +127,15 @@
       top: var(--entete); left: 0; right: 0;
       z-index: 2100;
       max-height: 60vh; overflow: auto;
-      padding: 10px max(16px, env(safe-area-inset-right, 0px)) 12px max(16px, env(safe-area-inset-left, 0px));
+      padding: var(--esp-3) max(var(--esp-4), env(safe-area-inset-right, 0px)) var(--esp-3) max(var(--esp-4), env(safe-area-inset-left, 0px));
       background: #243041; color: #e8edf3;
       box-shadow: 0 4px 10px rgba(0,0,0,.4);
-      font-size: 14px; line-height: 1.45;
+      font-size: var(--txt-sm); line-height: 1.45;
     }
-    #synthese-details ul { margin: 0; padding: 0 0 0 18px; display: flex; flex-direction: column; gap: 4px; }
+    #synthese-details ul { margin: 0; padding: 0 0 0 var(--esp-4); display: flex; flex-direction: column; gap: var(--esp-1); }
     #synthese-details .alerte-texte { color: #ffcc80; font-weight: 700; }
     #synthese-details button {
-      margin-top: 8px; font: inherit; font-size: 14px; padding: 6px 12px; border-radius: 4px; cursor: pointer;
+      margin-top: var(--esp-2); font: inherit; font-size: var(--txt-sm); padding: var(--esp-2) var(--esp-3); border-radius: 4px; cursor: pointer;
       background: #fff; color: #1b2430; border: none;
     }
     /* Mise en page sous le bandeau : carte (60 %) à gauche, main courante à droite */
@@ -159,19 +164,19 @@
       top: 60px; left: 16px; right: 16px;   /* sous le bouton « + Ajouter un point », pour ne jamais le cacher */
       max-width: 480px;
       margin: 0 auto;
-      padding: 12px 16px;
+      padding: var(--esp-3) var(--esp-4);
       background: #fff4e5;
       color: #5a3300;
       border: 1px solid #f0b46a;
       border-radius: 6px;
-      font-size: 15px;
+      font-size: var(--txt-md);
       line-height: 1.4;
       z-index: 1000;
       box-shadow: 0 2px 8px rgba(0,0,0,.25);
     }
     #message button {
-      margin-top: 8px;
-      padding: 6px 12px;
+      margin-top: var(--esp-2);
+      padding: var(--esp-2) var(--esp-3);
       font: inherit;
       border: 1px solid #c98a3a;
       border-radius: 4px;
@@ -180,72 +185,72 @@
       cursor: pointer;
     }
     /* Contenu de la bulle d'une station */
-    .bulle h3 { margin: 0 0 4px; font-size: 15px; }
-    .bulle p { margin: 2px 0; font-size: 14px; }
-    .bulle .hauteur { font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .bulle h3 { margin: 0 0 var(--esp-1); font-size: var(--txt-md); }
+    .bulle p { margin: var(--esp-1) 0; font-size: var(--txt-sm); }
+    .bulle .hauteur { font-size: var(--txt-lg); font-weight: 700; display: flex; align-items: center; gap: var(--esp-2); flex-wrap: wrap; }
     .bulle .gris { color: #666; }
-    .bulle .demo { margin-top: 6px; font-size: 12px; font-style: italic; color: #8a4b00; }
+    .bulle .demo { margin-top: var(--esp-2); font-size: var(--txt-xs); font-style: italic; color: #8a4b00; }
     .pastille {
-      font-size: 12px; font-weight: 600; color: #fff;
-      padding: 2px 8px; border-radius: 10px;
+      font-size: var(--txt-xs); font-weight: 600; color: #fff;
+      padding: 0 var(--esp-2); line-height: 20px; border-radius: 10px;
     }
     /* Légende en bas à gauche */
     .legende {
       background: rgba(255,255,255,.95);
-      padding: 8px 10px;
+      padding: var(--esp-2) var(--esp-3);
       border-radius: 6px;
       box-shadow: 0 1px 5px rgba(0,0,0,.3);
-      font-size: 12px;
+      font-size: var(--txt-xs);
       line-height: 1.6;
       color: #222;
       margin-bottom: 36px !important; /* laisse la place à la ligne des crédits en bas */
     }
-    .legende .ligne { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+    .legende .ligne { display: flex; align-items: center; gap: var(--esp-2); white-space: nowrap; }
     /* Légende en 4 blocs, avec les formes et symboles de la carte ; défile si elle est trop haute */
     .legende { max-width: min(320px, calc(100vw - 40px)); box-sizing: border-box; }
-    .legende-corps { max-height: calc((100vh - var(--entete)) * .6); overflow-y: auto; overscroll-behavior: contain; padding-right: 4px; }
-    .leg-bloc { padding: 4px 0 6px; }
+    .legende-corps { max-height: calc((100vh - var(--entete)) * .6); overflow-y: auto; overscroll-behavior: contain; padding-right: var(--esp-1); }
+    .leg-bloc { padding: var(--esp-1) 0 var(--esp-2); }
     .leg-bloc + .leg-bloc { border-top: 1px solid #e3e7ed; }
-    .leg-titre { font-weight: 700; color: #1b2430; margin-bottom: 2px; }
-    .leg-lignes { display: grid; grid-template-columns: auto auto; column-gap: 12px; row-gap: 2px; }
+    .leg-titre { font-weight: 700; color: #1b2430; margin-bottom: var(--esp-1); }
+    .leg-lignes { display: grid; grid-template-columns: auto auto; column-gap: var(--esp-3); row-gap: var(--esp-1); }
     .legende .ligne { min-height: 22px; }
-    .legende .st-icone { width: 18px; height: 18px; font-size: 12px; border-width: 1px; box-shadow: none; }
+    .legende .st-icone { width: 18px; height: 18px; font-size: var(--txt-xs); border-width: 1px; box-shadow: none; }
     .legende .st-icone.st-inconnu { border-width: 1px; }
-    .legende .ps-icone { width: 18px; height: 18px; flex: none; box-shadow: none; animation: none; margin: 4px 8px 0 2px; }
+    .legende .ps-icone { width: 18px; height: 18px; flex: none; box-shadow: none; animation: none; margin: var(--esp-1) var(--esp-2) 0 var(--esp-1); }
     .legende .ps-icone.etat-menace { box-shadow: 0 0 0 1px #fff, 0 0 0 4px var(--orange); }
     .legende .ps-icone.etat-touche { box-shadow: 0 0 0 1px #fff, 0 0 0 4px var(--rouge); }
     .legende .ps-icone.etat-evacue { box-shadow: 0 0 0 1px #fff, 0 0 0 4px var(--violet); }
     .legende .ps-icone.crise { border-radius: 4px; }
-    .leg-famille { margin-top: 4px; }
+    .leg-famille { margin-top: var(--esp-1); }
     .leg-famille-nom { font-weight: 600; color: #1b2430; }
-    .leg-types { display: flex; flex-wrap: wrap; gap: 2px 10px; }
-    .leg-type { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; color: #1b2430; }
+    .leg-types { display: flex; flex-wrap: wrap; gap: var(--esp-1) var(--esp-3); }
+    .leg-type { display: inline-flex; align-items: center; gap: var(--esp-1); white-space: nowrap; color: #1b2430; }
     /* Légende repliable : un toucher sur « Légende » l'ouvre ou la referme */
     .legende-bouton {
-      display: flex; align-items: center; gap: 6px;
-      font: inherit; font-size: 12px; font-weight: 700; color: #1b2430;
-      background: none; border: none; padding: 2px 0; cursor: pointer; min-height: 28px;
+      display: flex; align-items: center; gap: var(--esp-2);
+      font: inherit; font-size: var(--txt-xs); font-weight: 700; color: #1b2430;
+      background: none; border: none; padding: var(--esp-1) 0; cursor: pointer; min-height: 28px;
     }
-    .legende-bouton::after { content: '▾'; font-size: 12px; }
+    .legende-bouton::after { content: '▾'; font-size: var(--txt-xs); }
     .legende.repliee .legende-bouton::after { content: '▸'; }
     .legende.repliee .legende-corps { display: none; }
     .legende-bouton:focus-visible { outline: 2px solid #1d4ed8; outline-offset: 2px; }
-    .legende.repliee { padding: 2px 10px; }
+    .legende.repliee { padding: var(--esp-1) var(--esp-3); }
     .legende .rond { width: 12px; height: 12px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px rgba(0,0,0,.25); flex: none; }
-    .legende .note { margin-top: 2px; font-size: 12px; font-style: italic; color: #8a4b00; }
+    .legende .note { margin-top: var(--esp-1); font-size: var(--txt-xs); font-style: italic; color: #8a4b00; }
 
     /* Bouton « Recentrer » sous le zoom : refait le cadrage de la carte */
     .recentrer-bouton {
       display: block;
-      font: inherit; font-size: 13px; font-weight: 600;
-      height: 30px; padding: 0 8px;
+      font: inherit; font-size: var(--txt-sm); font-weight: 600;
+      height: 30px; padding: 0 var(--esp-2);
       background: #fff; color: #1b2430;
       border: 2px solid rgba(0,0,0,.2); border-radius: 4px;
       cursor: pointer; background-clip: padding-box;
     }
     .recentrer-bouton:hover { background: #f4f6f9; }
     .recentrer-bouton:focus-visible { outline: 2px solid #1d4ed8; outline-offset: 2px; }
-    @media (pointer: coarse) { .recentrer-bouton { height: 44px; padding: 0 10px; font-size: 14px; } }
+    @media (pointer: coarse) { .recentrer-bouton { height: 44px; padding: 0 var(--esp-3); font-size: var(--txt-sm); } }
 
     /* Un élément marqué « hidden » reste caché, même s'il a une mise en forme flex */
     [hidden] { display: none !important; }
@@ -279,36 +284,36 @@
     @media (max-width: 767px) {
       #panneau { border-left: none; border-top: 1px solid var(--mc-bord); }
       #mc-liste { flex: none; overflow: visible; }
-      .legende { padding: 5px 8px; font-size: 12px; line-height: 1.5; }
+      .legende { padding: var(--esp-1) var(--esp-2); font-size: var(--txt-xs); line-height: 1.5; }
       /* téléphone : dépliée, la légende prend au plus 60 % de la carte (55 % de l'écran) et défile */
       .legende-corps { max-height: 33vh; max-height: 33svh; }
       .legende .rond { width: 9px; height: 9px; }
-      .legende .note { grid-column: 1 / -1; font-size: 12px; }
+      .legende .note { grid-column: 1 / -1; font-size: var(--txt-xs); }
     }
     #panneau h2 {
       margin: 0;
-      font-size: 16px;
+      font-size: var(--txt-md);
       display: flex;
       align-items: baseline;
-      gap: 8px;
+      gap: var(--esp-2);
     }
-    #mc-compte { font-size: 13px; font-weight: 400; color: var(--mc-discret); }
+    #mc-compte { font-size: var(--txt-sm); font-weight: 400; color: var(--mc-discret); }
     #mc-formulaire {
       display: flex;
       flex-direction: column;
-      gap: 8px;
-      padding: 12px 16px;
+      gap: var(--esp-2);
+      padding: var(--esp-3) var(--esp-4);
       border-bottom: 1px solid var(--mc-bord);
       background: var(--mc-carte);
     }
-    #mc-formulaire .rangee { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-    #mc-formulaire label { font-size: 13px; color: var(--mc-discret); }
+    #mc-formulaire .rangee { display: flex; gap: var(--esp-2); align-items: center; flex-wrap: wrap; }
+    #mc-formulaire label { font-size: var(--txt-sm); color: var(--mc-discret); }
     #mc-formulaire .mc-libelle-champ { font-weight: 600; color: var(--mc-texte); margin-bottom: -4px; }
     /* 16 px minimum : évite le zoom automatique de l'iPhone quand on touche un champ */
     #mc-type, #mc-texte {
       font: inherit;
-      font-size: 16px;
-      padding: 6px 8px;
+      font-size: var(--txt-md);
+      padding: var(--esp-2) var(--esp-2);
       border: 1px solid var(--mc-bord);
       border-radius: 4px;
       background: #fff;
@@ -318,9 +323,9 @@
     #mc-texte { width: 100%; box-sizing: border-box; min-height: 60px; resize: vertical; }
     #mc-ajouter {
       font: inherit;
-      font-size: 15px;
+      font-size: var(--txt-md);
       font-weight: 600;
-      padding: 8px 16px;
+      padding: var(--esp-2) var(--esp-4);
       border: none;
       border-radius: 4px;
       background: #1b2430;
@@ -329,50 +334,50 @@
     }
     #mc-ajouter:focus-visible, .mc-entree button:focus-visible, #mc-reinit:focus-visible { outline: 2px solid #1d4ed8; outline-offset: 2px; }
     #mc-correction {
-      display: flex; align-items: center; gap: 8px;
-      font-size: 13px;
-      padding: 4px 8px;
+      display: flex; align-items: center; gap: var(--esp-2);
+      font-size: var(--txt-sm);
+      padding: var(--esp-1) var(--esp-2);
       background: #fff7e0;
       border: 1px solid #f0d58a;
       border-radius: 4px;
     }
-    #mc-correction button { font: inherit; font-size: 13px; border: none; background: none; color: var(--type-decision); cursor: pointer; text-decoration: underline; padding: 0; }
-    #mc-erreur { font-size: 13px; color: #b42318; }
-    #mc-avertissement { font-size: 13px; color: #8a4b00; padding: 8px 16px; background: #fff4e5; }
+    #mc-correction button { font: inherit; font-size: var(--txt-sm); border: none; background: none; color: var(--type-decision); cursor: pointer; text-decoration: underline; padding: 0; }
+    #mc-erreur { font-size: var(--txt-sm); color: #b42318; }
+    #mc-avertissement { font-size: var(--txt-sm); color: #8a4b00; padding: var(--esp-2) var(--esp-4); background: #fff4e5; }
     #mc-liste {
       flex: 1 1 auto;
       min-height: 0;
       overflow-y: auto;
       margin: 0;
-      padding: 12px 16px;
+      padding: var(--esp-3) var(--esp-4);
       list-style: none;
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: var(--esp-2);
     }
-    #mc-vide { color: var(--mc-discret); font-size: 14px; padding: 4px 0; }
+    #mc-vide { color: var(--mc-discret); font-size: var(--txt-sm); padding: var(--esp-1) 0; }
     .mc-entree {
       background: var(--mc-carte);
       border: 1px solid var(--mc-bord);
       border-left: 4px solid var(--couleur-type);
       border-radius: 4px;
-      padding: 8px 10px;
-      font-size: 14px;
+      padding: var(--esp-2) var(--esp-3);
+      font-size: var(--txt-sm);
     }
-    .mc-entete { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 12px; color: var(--mc-discret); }
+    .mc-entete { display: flex; align-items: center; gap: var(--esp-2); flex-wrap: wrap; font-size: var(--txt-xs); color: var(--mc-discret); }
     .mc-numero { font-weight: 700; color: var(--mc-texte); font-variant-numeric: tabular-nums; }
     .mc-type {
-      display: inline-flex; align-items: center; gap: 4px;
+      display: inline-flex; align-items: center; gap: var(--esp-1);
       font-weight: 600; color: #fff;
       background: var(--couleur-type);
-      padding: 1px 8px; border-radius: 10px;
+      padding: 0 var(--esp-2); line-height: 20px; border-radius: 10px;
     }
     .mc-heure { font-variant-numeric: tabular-nums; }
-    .mc-lien { font-size: 12px; margin-top: 4px; color: var(--mc-discret); font-style: italic; }
-    .mc-texte { margin-top: 4px; white-space: pre-wrap; overflow-wrap: anywhere; }
+    .mc-lien { font-size: var(--txt-xs); margin-top: var(--esp-1); color: var(--mc-discret); font-style: italic; }
+    .mc-texte { margin-top: var(--esp-1); white-space: pre-wrap; overflow-wrap: anywhere; }
     .mc-entree button {
       margin-left: auto;
-      font: inherit; font-size: 12px;
+      font: inherit; font-size: var(--txt-xs);
       border: none; background: none; padding: 0;
       color: var(--type-decision); cursor: pointer; text-decoration: underline;
     }
@@ -384,56 +389,56 @@
     .mc-entree button.mc-action:hover { color: var(--mc-texte); text-decoration-color: currentColor; }
     #mc-type:disabled { color: var(--mc-texte); background: var(--mc-fond); opacity: 1; }
     #mc-pied {
-      padding: 8px 16px calc(8px + env(safe-area-inset-bottom, 0px));
+      padding: var(--esp-2) var(--esp-4) calc(var(--esp-2) + env(safe-area-inset-bottom, 0px));
       border-top: 1px solid var(--mc-bord);
-      font-size: 12px;
+      font-size: var(--txt-xs);
       color: var(--mc-discret);
-      display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+      display: flex; align-items: center; gap: var(--esp-2); flex-wrap: wrap;
     }
     #mc-reinit {
       margin-left: auto;
-      font: inherit; font-size: 12px;
+      font: inherit; font-size: var(--txt-xs);
       border: none; background: none; padding: 0;
       color: var(--mc-discret); cursor: pointer; text-decoration: underline;
     }
     #mc-confirmation {
       width: 100%;
-      display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
-      padding: 8px;
+      display: flex; align-items: center; gap: var(--esp-2); flex-wrap: wrap;
+      padding: var(--esp-2);
       background: #f4f6f9;
       border: 1px solid #1b2430;
       border-radius: 4px;
       color: #1b2430;
-      font-size: 13px;
+      font-size: var(--txt-sm);
     }
-    #mc-confirmation button { font: inherit; font-size: 13px; padding: 4px 10px; border-radius: 4px; cursor: pointer; }
+    #mc-confirmation button { font: inherit; font-size: var(--txt-sm); padding: var(--esp-1) var(--esp-3); border-radius: 4px; cursor: pointer; }
     #mc-oui { background: #1b2430; color: #fff; border: 1px solid #1b2430; font-weight: 600; }
     #mc-non { background: #fff; color: var(--mc-texte); border: 1px solid var(--mc-bord); }
     #mc-lieu {
       flex: 1 1 0; min-width: 0;   /* reste sur la ligne du libellé, même avec un nom long */
-      font: inherit; font-size: 16px;
-      padding: 6px 8px;
+      font: inherit; font-size: var(--txt-md);
+      padding: var(--esp-2) var(--esp-2);
       border: 1px solid var(--mc-bord); border-radius: 4px;
       background: #fff; color: var(--mc-texte);
     }
     #mc-lieu:disabled { color: var(--mc-discret); background: var(--mc-fond); }
     /* Lien « épingle + nom du lieu » dans une entrée de la main courante */
     .mc-entree .mc-lieu {
-      display: inline-flex; align-items: center; gap: 4px;
-      margin: 6px 0 0;
-      padding: 2px 8px;
+      display: inline-flex; align-items: center; gap: var(--esp-1);
+      margin: var(--esp-2) 0 0;
+      padding: var(--esp-1) var(--esp-2);
       border-radius: 10px;
       background: #eef2f7;
       color: var(--mc-texte);
-      font-size: 12px;
+      font-size: var(--txt-xs);
       text-decoration: none;
     }
     .mc-entree button.mc-lieu { cursor: pointer; border: 1px solid var(--mc-bord); }
 
     /* ---------- Points sensibles (sur la carte) ---------- */
     .ps-bouton {
-      font: inherit; font-size: 14px; font-weight: 600;
-      padding: 8px 12px;
+      font: inherit; font-size: var(--txt-sm); font-weight: 600;
+      padding: var(--esp-2) var(--esp-3);
       border: none; border-radius: 4px;
       background: #1b2430; color: #fff;
       cursor: pointer;
@@ -442,13 +447,13 @@
     .ps-bouton.actif { background: #1d4ed8; }
     .ps-bouton:focus-visible { outline: 2px solid #1d4ed8; outline-offset: 2px; }
     .ps-aide {
-      margin-top: 6px;
+      margin-top: var(--esp-2);
       max-width: 200px;
-      padding: 6px 10px;
+      padding: var(--esp-2) var(--esp-3);
       background: rgba(255,255,255,.95);
       border-radius: 4px;
       box-shadow: 0 1px 5px rgba(0,0,0,.3);
-      font-size: 13px;
+      font-size: var(--txt-sm);
       color: #222;
     }
     #zone-carte.placement #carte { cursor: crosshair; }
@@ -466,28 +471,28 @@
       width: min(360px, calc(60% - 24px));
       box-sizing: border-box;
       z-index: 1001;
-      display: flex; flex-direction: column; gap: 8px;
-      padding: 12px;
+      display: flex; flex-direction: column; gap: var(--esp-2);
+      padding: var(--esp-3);
       background: #fff;
       color: #1b2430;
       border-radius: 6px;
       box-shadow: 0 2px 10px rgba(0,0,0,.35);
     }
-    #ps-formulaire h3 { margin: 0; font-size: 15px; }
-    #ps-formulaire .rangee { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-    #ps-formulaire label { font-size: 13px; color: #5d6b7c; }
+    #ps-formulaire h3 { margin: 0; font-size: var(--txt-md); }
+    #ps-formulaire .rangee { display: flex; gap: var(--esp-2); align-items: center; flex-wrap: wrap; }
+    #ps-formulaire label { font-size: var(--txt-sm); color: #5d6b7c; }
     #ps-nom, #ps-type {
-      font: inherit; font-size: 16px;
-      padding: 6px 8px;
+      font: inherit; font-size: var(--txt-md);
+      padding: var(--esp-2) var(--esp-2);
       border: 1px solid #d5dbe3; border-radius: 4px;
       background: #fff; color: #1b2430;
     }
     #ps-nom { width: 100%; box-sizing: border-box; }
     #ps-type { flex: 1 1 auto; min-width: 0; }
-    #ps-creer, #ps-annuler { font: inherit; font-size: 15px; padding: 8px 14px; border-radius: 4px; cursor: pointer; }
+    #ps-creer, #ps-annuler { font: inherit; font-size: var(--txt-md); padding: var(--esp-2) var(--esp-4); border-radius: 4px; cursor: pointer; }
     #ps-creer { font-weight: 600; background: #1b2430; color: #fff; border: 1px solid #1b2430; }
     #ps-annuler { background: #fff; color: #1b2430; border: 1px solid #d5dbe3; }
-    #ps-erreur { font-size: 13px; color: #b42318; }
+    #ps-erreur { font-size: var(--txt-sm); color: #b42318; }
     /* Icône d'un point sensible sur la carte */
     /* Pastille blanche, icône gris foncé : la famille se lit à l'icône, pas à la couleur.
        « Référencé » = rond ; « Ajouté en crise » = carré à coins arrondis, bordure foncée. */
@@ -500,15 +505,15 @@
       color: #1b2430;
       border: 1px solid #8a94a3;
       box-shadow: 0 1px 4px rgba(0,0,0,.35);
-      font-size: 15px; line-height: 1;
+      font-size: var(--txt-md); line-height: 1;
     }
     .ps-icone.crise { border-radius: 6px; border: 2px solid #1b2430; }
     .ps-icone.provisoire { border-radius: 6px; border: 2px dashed #8a94a3; opacity: .5; }
     /* Statut dans la fenêtre d'un point */
-    .statut { display: inline-block; margin: 2px 0 4px; font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 10px; }
+    .statut { display: inline-block; margin: var(--esp-1) 0 var(--esp-1); font-size: var(--txt-xs); font-weight: 600; padding: 0 var(--esp-2); line-height: 20px; border-radius: 10px; }
     .statut.reference { background: #e8ecf1; color: #1b2430; border: 1px solid #c5ccd6; }
     .statut.crise { background: #1b2430; color: #fff; border-radius: 4px; }   /* carré foncé, comme la pastille du point */
-    .bulle .a-verifier { color: #8a4b00; font-size: 13px; }
+    .bulle .a-verifier { color: #8a4b00; font-size: var(--txt-sm); }
     /* État d'un point : anneau extérieur (séparé de la bordure par un liseré blanc) */
     .ps-icone.etat-menace  { box-shadow: 0 0 0 2px #fff, 0 0 0 6px var(--orange), 0 1px 6px rgba(0,0,0,.5); }
     .ps-icone.etat-touche  { box-shadow: 0 0 0 2px #fff, 0 0 0 6px var(--rouge),  0 1px 6px rgba(0,0,0,.5); }
@@ -533,7 +538,7 @@
       display: flex; align-items: center; justify-content: center;
       border-radius: 50%; border: 2px solid #fff;
       box-shadow: 0 1px 4px rgba(0,0,0,.45);
-      color: #fff; font: 800 12px/1 system-ui, -apple-system, sans-serif; letter-spacing: -.5px;
+      color: #fff; font: 800 var(--txt-xs)/1 system-ui, -apple-system, sans-serif; letter-spacing: -.5px;
     }
     .st-normal { background: #2e7d32; }
     .st-vigilance { background: #ef6c00; }
@@ -549,7 +554,7 @@
       position: absolute; top: -8px; right: -8px;
       width: 16px; height: 16px; box-sizing: border-box;
       border-radius: 50%; border: 1px solid #fff;
-      color: #fff; font: 800 12px/14px system-ui, -apple-system, sans-serif; text-align: center;
+      color: #fff; font: 800 var(--txt-xs)/14px system-ui, -apple-system, sans-serif; text-align: center;
     }
     .ps-icone.etat-menace::after { content: '!'; background: #c2410c; }
     .ps-icone.etat-touche::after { content: '✕'; background: #c62828; }
@@ -558,8 +563,8 @@
     #nouvelles {
       position: fixed; z-index: 1500;
       left: 50%; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%);
-      min-height: 44px; padding: 0 20px; border: none; border-radius: 22px;
-      font: inherit; font-size: 15px; font-weight: 700;
+      min-height: 44px; padding: 0 var(--esp-5); border: none; border-radius: 22px;
+      font: inherit; font-size: var(--txt-md); font-weight: 700;
       background: #1d4ed8; color: #fff; cursor: pointer;
       box-shadow: 0 3px 12px rgba(0,0,0,.35); white-space: nowrap;
     }
@@ -572,59 +577,59 @@
     #annulation {
       position: absolute; z-index: 1100;
       left: 50%; bottom: 12px; transform: translateX(-50%);
-      display: flex; align-items: center; gap: 12px;
+      display: flex; align-items: center; gap: var(--esp-3);
       max-width: calc(100% - 24px); box-sizing: border-box;
-      padding: 4px 4px 4px 16px; border-radius: 8px;
-      background: #1b2430; color: #fff; font-size: 15px;
+      padding: var(--esp-1) var(--esp-1) var(--esp-1) var(--esp-4); border-radius: 8px;
+      background: #1b2430; color: #fff; font-size: var(--txt-md);
       box-shadow: 0 2px 10px rgba(0,0,0,.4);
     }
     #annulation-texte { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
     #annulation-bouton {
-      flex: none; min-height: 44px; min-width: 44px; padding: 0 16px;
+      flex: none; min-height: 44px; min-width: 44px; padding: 0 var(--esp-4);
       font: inherit; font-weight: 700; border: none; border-radius: 6px;
       background: #fff; color: #1b2430; cursor: pointer;
     }
     #annulation-bouton:focus-visible { outline: 2px solid #8ab4ff; outline-offset: 2px; }
     /* Lien discret « Annuler ce statut », sous les boutons d'état */
     .annuler-statut {
-      font: inherit; font-size: 13px; color: #5d6b7c; background: none; border: none; padding: 0;
+      font: inherit; font-size: var(--txt-sm); color: #5d6b7c; background: none; border: none; padding: 0;
       text-decoration: underline; text-decoration-color: #c5ccd6; text-underline-offset: 3px; cursor: pointer;
-      position: relative; margin: 2px 0 6px;
+      position: relative; margin: var(--esp-1) 0 var(--esp-2);
     }
     @media (pointer: coarse) {
       .annuler-statut::after { content: ''; position: absolute; left: -8px; right: -8px; top: 50%; height: 44px; transform: translateY(-50%); }
-      .annuler-statut { margin: 12px 0 14px; }
+      .annuler-statut { margin: var(--esp-3) 0 var(--esp-4); }
     }
 
     /* Fenêtre d'un point compacte : l'essentiel visible, le reste dans « Plus d'infos » */
-    .badges-point { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 4px 0; }
+    .badges-point { display: flex; flex-wrap: wrap; gap: var(--esp-2); align-items: center; margin: var(--esp-1) 0; }
     .badges-point .statut, .badges-point .etat-point { margin: 0; }
-    .bulle .info { margin: 2px 0; }
+    .bulle .info { margin: var(--esp-1) 0; }
     .bulle .info .lib { color: #5d6b7c; }
     .bulle .info .val { color: #1b2430; }
-    .plus-infos { margin-top: 6px; border-top: 1px solid #e3e7ed; padding-top: 4px; }
+    .plus-infos { margin-top: var(--esp-2); border-top: 1px solid #e3e7ed; padding-top: var(--esp-1); }
     .plus-infos summary {
-      cursor: pointer; font-size: 14px; font-weight: 600; color: #1b2430;
-      min-height: 32px; display: flex; align-items: center; gap: 6px; list-style: none;
+      cursor: pointer; font-size: var(--txt-sm); font-weight: 600; color: #1b2430;
+      min-height: 32px; display: flex; align-items: center; gap: var(--esp-2); list-style: none;
     }
     .plus-infos summary::-webkit-details-marker { display: none; }
-    .plus-infos summary::before { content: '▸'; font-size: 12px; color: #5d6b7c; }
+    .plus-infos summary::before { content: '▸'; font-size: var(--txt-xs); color: #5d6b7c; }
     .plus-infos[open] summary::before { content: '▾'; }
     @media (pointer: coarse) { .plus-infos summary { min-height: 44px; } }
 
     /* Fenêtre d'un point : état, suivi automatique, boutons, historique */
-    .etat-point { display: inline-block; margin: 0 0 4px 6px; font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 10px; color: #fff; }
+    .etat-point { display: inline-block; margin: 0 0 var(--esp-1) var(--esp-2); font-size: var(--txt-xs); font-weight: 700; padding: 0 var(--esp-2); line-height: 20px; border-radius: 10px; color: #fff; }
     .etat-point.normal { background: #e8ecf1; color: #1b2430; border: 1px solid #c5ccd6; }
     .etat-point.menace { background: #c2410c; }   /* orange foncé : 5,2:1 avec le blanc (l'orange vif donnait 3,1:1) */
     .etat-point.touche { background: var(--rouge); }
     .etat-point.evacue { background: var(--violet); }
-    .bulle .suivi { margin-top: 6px; padding: 6px 8px; background: #f4f6f9; border-radius: 4px; font-size: 13px; }
-    .bulle .suivi p { font-size: 13px; }
-    .boutons-etat { display: flex; gap: 6px; margin: 8px 0 4px; }
+    .bulle .suivi { margin-top: var(--esp-2); padding: var(--esp-2) var(--esp-2); background: #f4f6f9; border-radius: 4px; font-size: var(--txt-sm); }
+    .bulle .suivi p { font-size: var(--txt-sm); }
+    .boutons-etat { display: flex; gap: var(--esp-2); margin: var(--esp-2) 0 var(--esp-1); }
     .boutons-etat button {
       flex: 1 1 0; min-width: 0;
       min-height: 44px;                      /* taille confortable au doigt */
-      font: inherit; font-size: 14px; font-weight: 700;
+      font: inherit; font-size: var(--txt-sm); font-weight: 700;
       border-radius: 6px; cursor: pointer;
       border: 2px solid currentColor; background: #fff;
     }
@@ -635,23 +640,23 @@
     .boutons-etat button[aria-pressed="true"] span { color: #fff; }
     .boutons-etat button:disabled { opacity: .35; cursor: default; }
     .boutons-etat button:focus-visible { outline: 2px solid #1d4ed8; outline-offset: 2px; }
-    .historique { margin: 4px 0 0; padding: 0; list-style: none; font-size: 12px; }
-    .historique li { padding: 2px 0; border-top: 1px solid #eef1f5; font-variant-numeric: tabular-nums; }
+    .historique { margin: var(--esp-1) 0 0; padding: 0; list-style: none; font-size: var(--txt-xs); }
+    .historique li { padding: var(--esp-1) 0; border-top: 1px solid #eef1f5; font-variant-numeric: tabular-nums; }
     .historique .origine { color: #5d6b7c; }
     .mc-marque.auto { background: #e2e8f0; color: #334155; }
     /* Légende : exemples de bordure des points */
     .legende .anneau { width: 12px; height: 12px; border-radius: 50%; background: #fff; border: 1px solid #8a94a3; flex: none; box-sizing: border-box; }
     .legende .anneau.crise { border-radius: 3px; border: 2px solid #1b2430; }
-    .legende .anneau.etat-menace { box-shadow: 0 0 0 1px #fff, 0 0 0 4px var(--orange); margin: 0 3px; }
-    .legende .anneau.etat-touche { box-shadow: 0 0 0 1px #fff, 0 0 0 4px var(--rouge);  margin: 0 3px; }
-    .legende .anneau.etat-evacue { box-shadow: 0 0 0 1px #fff, 0 0 0 4px var(--violet); margin: 0 3px; }
+    .legende .anneau.etat-menace { box-shadow: 0 0 0 1px #fff, 0 0 0 4px var(--orange); margin: 0 var(--esp-1); }
+    .legende .anneau.etat-touche { box-shadow: 0 0 0 1px #fff, 0 0 0 4px var(--rouge);  margin: 0 var(--esp-1); }
+    .legende .anneau.etat-evacue { box-shadow: 0 0 0 1px #fff, 0 0 0 4px var(--violet); margin: 0 var(--esp-1); }
     @media (max-width: 767px) { .legende .anneau { width: 11px; height: 11px; } }
 
     /* ---------- Mode démo ---------- */
     #demo-entrer {
       flex: none;
-      font: inherit; font-size: 13px; font-weight: 600;
-      padding: 4px 10px;
+      font: inherit; font-size: var(--txt-sm); font-weight: 600;
+      padding: var(--esp-1) var(--esp-3);
       border: 1px solid #a5b4fc; border-radius: 4px;
       background: transparent; color: #e0e7ff;
       cursor: pointer;
@@ -663,65 +668,65 @@
       height: var(--haut-demo);
       box-sizing: border-box;
       z-index: 2000;
-      display: flex; align-items: center; gap: 6px;
-      padding: 0 max(12px, env(safe-area-inset-right, 0px)) 0 max(12px, env(safe-area-inset-left, 0px));
+      display: flex; align-items: center; gap: var(--esp-2);
+      padding: 0 max(var(--esp-3), env(safe-area-inset-right, 0px)) 0 max(var(--esp-3), env(safe-area-inset-left, 0px));
       /* indigo foncé à fines bandes diagonales : « ceci est un exercice », sans emprunter une couleur d'état */
       background: repeating-linear-gradient(135deg, #312e81 0 12px, #3c3a96 12px 24px);
       color: #fff;
       box-shadow: 0 2px 6px rgba(0,0,0,.3);
       white-space: nowrap;
     }
-    .demo-temps { display: flex; align-items: center; gap: 6px; flex: none; }
+    .demo-temps { display: flex; align-items: center; gap: var(--esp-2); flex: none; }
     .demo-etiquette {
-      font-weight: 800; letter-spacing: .08em; font-size: 14px;
-      padding: 3px 8px; border-radius: 4px;
+      font-weight: 800; letter-spacing: .08em; font-size: var(--txt-sm);
+      padding: var(--esp-1) var(--esp-2); border-radius: 4px;
       background: #fff; color: #312e81;
     }
-    #demo-horloge { font-size: 17px; font-weight: 700; font-variant-numeric: tabular-nums; }
-    #demo-phase { font-size: 13px; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+    #demo-horloge { font-size: var(--txt-lg); font-weight: 700; font-variant-numeric: tabular-nums; }
+    #demo-phase { font-size: var(--txt-sm); overflow: hidden; text-overflow: ellipsis; min-width: 0; }
     .texte-court { display: none; }
     @media (max-width: 420px) {
       #demo-phase { display: none; }
-      #demo-barre { gap: 5px; }
+      #demo-barre { gap: var(--esp-1); }
       .texte-long { display: none; }
       .texte-court { display: inline; }
-      .demo-btn { min-width: 32px; padding: 0 6px; }
-      #demo-horloge { font-size: 16px; }
+      .demo-btn { min-width: 32px; padding: 0 var(--esp-2); }
+      #demo-horloge { font-size: var(--txt-md); }
     }
     /* Téléphone : « DÉMO » au-dessus de l'horloge, pour que les boutons de 44 px tiennent sur la ligne */
     @media (max-width: 767px) {
-      .demo-temps { flex-direction: column; align-items: flex-start; gap: 1px; }
-      .demo-temps .demo-etiquette { font-size: 12px; padding: 1px 6px; }
+      .demo-temps { flex-direction: column; align-items: flex-start; gap: var(--esp-1); }
+      .demo-temps .demo-etiquette { font-size: var(--txt-xs); padding: var(--esp-1) var(--esp-2); }
     }
     .demo-btn {
-      font: inherit; font-size: 14px; font-weight: 600;
-      min-width: 36px; height: 32px; padding: 0 8px;
+      font: inherit; font-size: var(--txt-sm); font-weight: 600;
+      min-width: 36px; height: 32px; padding: 0 var(--esp-2);
       border: 1px solid rgba(0,0,0,.25); border-radius: 4px;
       background: #fff; color: #1b2430; cursor: pointer;
     }
     #demo-quitter { margin-left: auto; }
     /* Boutons de la barre démo : icône + libellé (côte à côte sur ordinateur, empilés sur téléphone) */
-    #demo-lecture, #demo-vitesse, #demo-recommencer { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
-    .demo-icone { font-size: 15px; display: inline-flex; }
+    #demo-lecture, #demo-vitesse, #demo-recommencer { display: inline-flex; align-items: center; justify-content: center; gap: var(--esp-2); }
+    .demo-icone { font-size: var(--txt-md); display: inline-flex; }
     .ico { flex: none; display: block; }
-    #actualiser { display: inline-flex; align-items: center; gap: 6px; }
+    #actualiser { display: inline-flex; align-items: center; gap: var(--esp-2); }
     .act-icone { display: inline-flex; }
-    .titre-point { display: flex; align-items: center; gap: 6px; }
+    .titre-point { display: flex; align-items: center; gap: var(--esp-2); }
     .titre-point .ico { color: #1b2430; }
     .mc-type .ico, .mc-lieu .ico { width: 14px; height: 14px; }
-    .demo-libelle { font-size: 13px; }
+    .demo-libelle { font-size: var(--txt-sm); }
     .lib-court { display: none; }
     @media (max-width: 767px) {
-      #demo-lecture, #demo-vitesse, #demo-recommencer { flex-direction: column; gap: 1px; padding: 0 4px; line-height: 1.1; }
-      .demo-libelle { font-size: 12px; }
+      #demo-lecture, #demo-vitesse, #demo-recommencer { flex-direction: column; gap: var(--esp-1); padding: 0 var(--esp-1); line-height: 1.1; }
+      .demo-libelle { font-size: var(--txt-xs); }
       .lib-long { display: none; }
       .lib-court { display: inline; }
     }
     .demo-btn:focus-visible, #demo-entrer:focus-visible { outline: 2px solid #1d4ed8; outline-offset: 2px; }
     /* Marques « démo » et « scénario » dans la main courante */
     .mc-marque {
-      font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
-      padding: 0 6px; border-radius: 8px;
+      font-size: var(--txt-xs); font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
+      padding: 0 var(--esp-2); border-radius: 8px;
       background: #e0e7ff; color: #312e81;      /* démo : indigo, comme la barre DÉMO */
     }
     .mc-marque.scenario { background: #dbeafe; color: #1e3a8a; }
@@ -729,51 +734,51 @@
 
     /* ---------- Point de situation rédigé par l'IA (étape 8) ---------- */
     #sit {
-      padding: 12px 16px;
+      padding: var(--esp-3) var(--esp-4);
       background: #fff;
       border-bottom: 1px solid var(--mc-bord);
-      display: flex; flex-direction: column; gap: 8px;
+      display: flex; flex-direction: column; gap: var(--esp-2);
     }
-    #sit .sit-tete { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+    #sit .sit-tete { display: flex; align-items: center; justify-content: space-between; gap: var(--esp-2); flex-wrap: wrap; }
     #sit-generer {
-      font: inherit; font-size: 15px; font-weight: 600;
-      padding: 10px 14px; min-height: 44px;
+      font: inherit; font-size: var(--txt-md); font-weight: 600;
+      padding: var(--esp-3) var(--esp-4); min-height: 44px;
       border: none; border-radius: 4px;
       background: var(--type-point); color: #fff; cursor: pointer;
     }
     #sit-generer:disabled { opacity: .6; cursor: wait; }
-    .sit-aide { margin: 0; font-size: 13px; color: var(--mc-discret); }
-    #sit-brouillon { display: flex; flex-direction: column; gap: 8px; }
+    .sit-aide { margin: 0; font-size: var(--txt-sm); color: var(--mc-discret); }
+    #sit-brouillon { display: flex; flex-direction: column; gap: var(--esp-2); }
     .sit-bandeau {
-      font-size: 12px; font-weight: 700; letter-spacing: .02em;
+      font-size: var(--txt-xs); font-weight: 700; letter-spacing: .02em;
       color: #134e4a; background: #ccfbf1;
-      padding: 4px 8px; border-radius: 4px; align-self: flex-start;
+      padding: var(--esp-1) var(--esp-2); border-radius: 4px; align-self: flex-start;
     }
-    #sit-attente { font-size: 14px; color: var(--mc-discret); }
+    #sit-attente { font-size: var(--txt-sm); color: var(--mc-discret); }
     #sit-texte {
       width: 100%; box-sizing: border-box; min-height: 260px;
-      font: inherit; font-size: 15px; line-height: 1.45;
-      padding: 8px 10px;
+      font: inherit; font-size: var(--txt-md); line-height: 1.45;
+      padding: var(--esp-2) var(--esp-3);
       border: 2px dashed #5eead4; border-radius: 4px;
       background: #f0fdfa; color: var(--mc-texte);
     }
     #sit-texte[readonly] { opacity: .85; }
-    #sit-faits summary { cursor: pointer; font-size: 13px; color: var(--mc-discret); }
+    #sit-faits summary { cursor: pointer; font-size: var(--txt-sm); color: var(--mc-discret); }
     #sit-faits pre {
-      max-height: 240px; overflow: auto; margin: 6px 0 0;
-      padding: 8px; font-size: 12px; white-space: pre-wrap;
+      max-height: 240px; overflow: auto; margin: var(--esp-2) 0 0;
+      padding: var(--esp-2); font-size: var(--txt-xs); white-space: pre-wrap;
       background: var(--mc-fond); border: 1px solid var(--mc-bord); border-radius: 4px;
     }
-    #sit .rangee { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    #sit .rangee { display: flex; gap: var(--esp-2); flex-wrap: wrap; align-items: center; }
     #sit .rangee button {
-      font: inherit; font-size: 15px; padding: 8px 12px; min-height: 44px;
+      font: inherit; font-size: var(--txt-md); padding: var(--esp-2) var(--esp-3); min-height: 44px;
       border-radius: 4px; cursor: pointer;
       background: #fff; color: var(--mc-texte); border: 1px solid var(--mc-bord);
     }
     #sit .rangee #sit-valider { background: #1b2430; color: #fff; border-color: #1b2430; font-weight: 600; }
-    #sit-erreur { font-size: 13px; color: #b42318; }
-    .mc-source { margin-top: 4px; font-size: 12px; color: var(--mc-discret); }
-    #app-avertissement { font-size: 13px; color: #8a4b00; padding: 8px 16px; background: #fff4e5; }
+    #sit-erreur { font-size: var(--txt-sm); color: #b42318; }
+    .mc-source { margin-top: var(--esp-1); font-size: var(--txt-xs); color: var(--mc-discret); }
+    #app-avertissement { font-size: var(--txt-sm); color: #8a4b00; padding: var(--esp-2) var(--esp-4); background: #fff4e5; }
     /* Sur téléphone : la fenêtre de création s'insère juste sous la carte, comme un bloc de la page.
        Posée sur la carte, elle passait sous le bandeau à l'ouverture du clavier de l'iPhone. */
     @media (max-width: 767px) {
@@ -784,7 +789,7 @@
         box-shadow: none;
         border-top: 3px solid #1d4ed8;
         border-bottom: 1px solid #d5dbe3;
-        padding: 12px 16px;
+        padding: var(--esp-3) var(--esp-4);
       }
     }
 
@@ -797,7 +802,7 @@
     @media (pointer: coarse) {
       :root { --haut-demo: 56px; }
       /* Bandeau : boutons de 44 px, 8 px entre la ligne du titre et la synthèse */
-      #bandeau { gap: 8px; padding-top: 4px !important; }
+      #bandeau { gap: var(--esp-2); padding-top: var(--esp-1) !important; }
       .ligne-titre { height: auto; min-height: 44px; }
       #actualiser, #demo-entrer { min-height: 44px; }
       /* « Détails » : toute la ligne de synthèse devient la zone de toucher (44 px de haut au moins) */
@@ -806,34 +811,34 @@
       #synthese-details-bouton::after { content: ''; position: absolute; inset: 0; }
       #synthese-details button { min-height: 44px; }
       /* Barre démo : boutons de 44 px espacés de 8 px */
-      #demo-barre { gap: 8px; }
+      #demo-barre { gap: var(--esp-2); }
       .demo-btn, #demo-quitter { min-width: 44px; height: 44px; }
       /* Carte : zoom + / − de 44 px, séparés de 8 px ; croix des fenêtres de 44 px ; légende */
-      .leaflet-touch .leaflet-control-zoom { border: none; display: flex; flex-direction: column; gap: 8px; }
+      .leaflet-touch .leaflet-control-zoom { border: none; display: flex; flex-direction: column; gap: var(--esp-2); }
       .leaflet-touch .leaflet-control-zoom a {
-        width: 44px; height: 44px; line-height: 40px; font-size: 24px;
+        width: 44px; height: 44px; line-height: 40px; font-size: var(--txt-xl);
         border: 2px solid rgba(0,0,0,.2); border-radius: 4px;
       }
-      .leaflet-container a.leaflet-popup-close-button { width: 44px; height: 44px; font-size: 24px; line-height: 44px; top: 0; right: 0; }
+      .leaflet-container a.leaflet-popup-close-button { width: 44px; height: 44px; font-size: var(--txt-xl); line-height: 44px; top: 0; right: 0; }
       .leaflet-popup-content { margin-right: 40px; }
-      .legende-bouton { min-height: 44px; padding: 0 4px; }
+      .legende-bouton { min-height: 44px; padding: 0 var(--esp-1); }
       .ps-bouton { min-height: 44px; }
       #message button { min-height: 44px; }
       /* Main courante : menus, champ, boutons */
       #mc-type, #mc-lieu, #ps-type, #ps-nom { min-height: 44px; }
       #mc-ajouter, #ps-creer, #ps-annuler, #mc-oui, #mc-non { min-height: 44px; }
-      #mc-correction button { min-height: 44px; padding: 0 8px; }
-      #mc-reinit { min-height: 44px; padding: 0 8px; }
+      #mc-correction button { min-height: 44px; padding: 0 var(--esp-2); }
+      #mc-reinit { min-height: 44px; padding: 0 var(--esp-2); }
       /* Entrées : « Corriger » et le lien de lieu gardent leur dessin, leur zone de toucher passe à 44 px.
          Plus d'air entre et dans les entrées, pour garder 8 px entre deux zones voisines. */
-      #mc-liste { gap: 16px; }
-      .mc-entree { padding: 10px 12px; }
+      #mc-liste { gap: var(--esp-4); }
+      .mc-entree { padding: var(--esp-3) var(--esp-3); }
       .mc-entree button { position: relative; }
       .mc-entree button::after {
         content: ''; position: absolute;
         left: -8px; right: -8px; top: 50%; height: 44px; transform: translateY(-50%);
       }
-      .mc-entree .mc-lieu { margin-top: 16px; }
+      .mc-entree .mc-lieu { margin-top: var(--esp-4); }
     }
     /* Un champ qui reçoit le clavier ne s'arrête jamais sous le bandeau */
     input, select, textarea { scroll-margin-top: calc(var(--entete) + 16px); }
