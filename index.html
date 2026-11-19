@@ -286,6 +286,7 @@
     }
     #mc-formulaire .rangee { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
     #mc-formulaire label { font-size: 13px; color: var(--mc-discret); }
+    #mc-formulaire .mc-libelle-champ { font-weight: 600; color: var(--mc-texte); margin-bottom: -4px; }
     /* 16 px minimum : évite le zoom automatique de l'iPhone quand on touche un champ */
     #mc-type, #mc-texte {
       font: inherit;
@@ -590,6 +591,17 @@
       background: #fff; color: #1b2430; cursor: pointer;
     }
     #demo-quitter { margin-left: auto; }
+    /* Boutons de la barre démo : icône + libellé (côte à côte sur ordinateur, empilés sur téléphone) */
+    #demo-lecture, #demo-vitesse, #demo-recommencer { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+    .demo-icone { font-size: 15px; }
+    .demo-libelle { font-size: 13px; }
+    .lib-court { display: none; }
+    @media (max-width: 767px) {
+      #demo-lecture, #demo-vitesse, #demo-recommencer { flex-direction: column; gap: 1px; padding: 0 4px; line-height: 1.1; }
+      .demo-libelle { font-size: 12px; }
+      .lib-long { display: none; }
+      .lib-court { display: inline; }
+    }
     .demo-btn:focus-visible, #demo-entrer:focus-visible { outline: 2px solid #1d4ed8; outline-offset: 2px; }
     /* Marques « démo » et « scénario » dans la main courante */
     .mc-marque {
@@ -732,9 +744,10 @@
       <span id="demo-horloge" aria-live="off">J+0 06:00</span>
     </span>
     <span id="demo-phase"></span>
-    <button type="button" class="demo-btn" id="demo-lecture" aria-label="Pause">⏸</button>
-    <button type="button" class="demo-btn" id="demo-vitesse" aria-label="Changer la vitesse">×1</button>
-    <button type="button" class="demo-btn" id="demo-recommencer" aria-label="Recommencer la démo depuis le début">⟲</button>
+    <!-- Icône + libellé visible (le libellé sert aussi de nom pour les lecteurs d'écran) -->
+    <button type="button" class="demo-btn" id="demo-lecture"><span class="demo-icone" aria-hidden="true">⏸</span><span class="demo-libelle">Pause</span></button>
+    <button type="button" class="demo-btn" id="demo-vitesse" title="Changer la vitesse"><span class="demo-icone">×1</span><span class="demo-libelle">Vitesse</span></button>
+    <button type="button" class="demo-btn" id="demo-recommencer" title="Recommencer la démo depuis le début"><span class="demo-icone" aria-hidden="true">⟲</span><span class="demo-libelle"><span class="lib-long">Recommencer</span><span class="lib-court">Rejouer</span></span></button>
     <button type="button" class="demo-btn" id="demo-quitter" aria-label="Quitter la démo"><span class="texte-long">Quitter la démo</span><span class="texte-court">Quitter</span></button>
   </div>
   <div id="espace">
@@ -807,7 +820,8 @@
           <span id="mc-correction-texte"></span>
           <button type="button" id="mc-correction-annuler">Annuler</button>
         </div>
-        <textarea id="mc-texte" rows="2" maxlength="1000" placeholder="Que se passe-t-il ? (ex. : Montée de la Saône, PC activé)"></textarea>
+        <label for="mc-texte" class="mc-libelle-champ">Que se passe-t-il ?</label>
+        <textarea id="mc-texte" rows="2" maxlength="1000" placeholder="ex. : Montée de la Saône, PC activé"></textarea>
         <div class="rangee">
           <button type="submit" id="mc-ajouter">Ajouter</button>
           <span id="mc-erreur" role="alert"></span>
@@ -2253,9 +2267,9 @@
       const fini = tSim >= dureeMinutes();
       demo.horloge.textContent = heureSimulee(tSim);
       demo.phase.textContent = fini ? 'Fin du scénario' : phaseActuelle();
-      demo.lecture.textContent = enLecture ? '⏸' : '▶';
-      demo.lecture.setAttribute('aria-label', enLecture ? 'Pause' : (fini ? 'Rejouer depuis le début' : 'Lecture'));
-      demo.vitesse.textContent = LIBELLES_VITESSE[iVitesse];
+      demo.lecture.querySelector('.demo-icone').textContent = enLecture ? '⏸' : '▶';
+      demo.lecture.querySelector('.demo-libelle').textContent = enLecture ? 'Pause' : (fini ? 'Rejouer' : 'Lecture');
+      demo.vitesse.querySelector('.demo-icone').textContent = LIBELLES_VITESSE[iVitesse];
     }
 
     // Un pas de l'horloge (4 fois par seconde)
