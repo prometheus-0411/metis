@@ -554,6 +554,34 @@
     .ps-icone.etat-menace::after { content: '!'; background: #c2410c; }
     .ps-icone.etat-touche::after { content: '✕'; background: #c62828; }
     .ps-icone.etat-evacue::after { content: '↗\FE0E'; background: #7b1fa2; }
+    /* Message « <Nom> : évacué · Annuler » (5 s) en bas de la carte, au-dessus des contrôles */
+    #annulation {
+      position: absolute; z-index: 1100;
+      left: 50%; bottom: 12px; transform: translateX(-50%);
+      display: flex; align-items: center; gap: 12px;
+      max-width: calc(100% - 24px); box-sizing: border-box;
+      padding: 4px 4px 4px 16px; border-radius: 8px;
+      background: #1b2430; color: #fff; font-size: 15px;
+      box-shadow: 0 2px 10px rgba(0,0,0,.4);
+    }
+    #annulation-texte { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+    #annulation-bouton {
+      flex: none; min-height: 44px; min-width: 44px; padding: 0 16px;
+      font: inherit; font-weight: 700; border: none; border-radius: 6px;
+      background: #fff; color: #1b2430; cursor: pointer;
+    }
+    #annulation-bouton:focus-visible { outline: 2px solid #8ab4ff; outline-offset: 2px; }
+    /* Lien discret « Annuler ce statut », sous les boutons d'état */
+    .annuler-statut {
+      font: inherit; font-size: 13px; color: #5d6b7c; background: none; border: none; padding: 0;
+      text-decoration: underline; text-decoration-color: #c5ccd6; text-underline-offset: 3px; cursor: pointer;
+      position: relative; margin: 2px 0 6px;
+    }
+    @media (pointer: coarse) {
+      .annuler-statut::after { content: ''; position: absolute; left: -8px; right: -8px; top: 50%; height: 44px; transform: translateY(-50%); }
+      .annuler-statut { margin: 12px 0 14px; }
+    }
+
     /* Fenêtre d'un point : état, suivi automatique, boutons, historique */
     .etat-point { display: inline-block; margin: 0 0 4px 6px; font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 10px; color: #fff; }
     .etat-point.normal { background: #e8ecf1; color: #1b2430; border: 1px solid #c5ccd6; }
@@ -811,6 +839,11 @@
     <div id="zone-carte">
       <div id="carte"></div>
       <div id="message" hidden></div>
+      <!-- Statut humain qui vient d'être touché : 5 s pour l'annuler avant qu'il soit écrit -->
+      <div id="annulation" hidden role="status" aria-live="polite">
+        <span id="annulation-texte"></span>
+        <button type="button" id="annulation-bouton">Annuler</button>
+      </div>
     </div>
 
     <!-- Création d'un point « Ajouté en crise » (s'affiche après un toucher sur la carte) :
@@ -1565,7 +1598,7 @@
     });
 
     // Ajoute une entrée (formulaire, création d'un point, ou information du scénario de démo)
-    function ajouterEntree({ type, texte, corrige, annote, lieu, scenario, auto, ia }) {
+    function ajouterEntree({ type, texte, corrige, annote, lieu, scenario, auto, ia, dateFaits, simFaits }) {
       // On relit le stockage juste avant d'ajouter (au cas où un autre onglet aurait écrit entre-temps)
       const enStock = lireStockage();
       if (enStock.length > entrees.length) entrees = enStock;
@@ -1573,7 +1606,7 @@
         n: entrees.reduce((max, e) => Math.max(max, e.n), 0) + 1,
         type,
         texte,
-        date: new Date().toISOString()   // heure réelle de saisie, toujours conservée
+        date: dateFaits || new Date().toISOString()   // heure réelle (du toucher, si l'écriture a été différée)
       };
       if (corrige) entree.corrige = corrige;
       if (annote) entree.annote = annote;
@@ -1590,8 +1623,8 @@
           entree.scenario = scenario.id;
           entree.source = scenario.source;
         } else {
-          // Saisie pendant la démo : heure simulée du moment, marque « démo »
-          entree.sim = Math.floor(tSim);
+          // Saisie pendant la démo : heure simulée du moment (ou du toucher), marque « démo »
+          entree.sim = simFaits != null ? simFaits : Math.floor(tSim);
           entree.demo = true;
         }
       }
@@ -1626,6 +1659,7 @@
     });
     document.getElementById('mc-non').addEventListener('click', () => { mc.confirmation.hidden = true; });
     document.getElementById('mc-oui').addEventListener('click', () => {
+      validerAttente();
       entrees = [];
       points = [];
       etatsPoints = {};
@@ -1823,7 +1857,7 @@
         })
           // contenu recalculé à chaque ouverture ; la fenêtre s'ouvre sous le bouton « + Ajouter un point »
           // hauteur maximale de la fenêtre adaptée à la carte (petite sur téléphone), le reste défile
-          .bindPopup(() => bullePoint(p), { maxHeight: Math.max(200, Math.min(380, carte.getSize().y - 130)), autoPanPaddingTopLeft: L.point(10, 70), autoPanPaddingBottomRight: L.point(10, 10) })
+          .bindPopup(() => bullePoint(p), { maxHeight: Math.max(200, Math.min(380, carte.getSize().y - 130)), autoPanPaddingTopLeft: L.point(10, 70), autoPanPaddingBottomRight: L.point(10, 72) })   // en bas : place du message d'annulation
           .addTo(calquePoints);
       }
       remplirMenuLieu();
@@ -2084,7 +2118,8 @@
       leve:    'Menace levée',
       touche:  'Touché',
       evacue:  'Évacué',
-      retabli: 'Rétabli'
+      retabli: 'Rétabli',
+      annulation: 'Statut annulé'
     };
     const MARGE_LEVEE = 0.05;   // la menace n'est levée que 5 cm sous la hauteur critique (évite les allers-retours)
     let etatsPoints = {};       // identifiant du point → { statut, historique: [...] }
@@ -2151,12 +2186,115 @@
       majSynthese();
     }
 
+
+    // ---------- Statut humain : 5 s pour annuler avant d'écrire ----------
+    // L'état change tout de suite (carte, fenêtre, bandeau). L'entrée de main courante et la ligne
+    // d'historique ne s'écrivent qu'au bout de 5 s, avec l'heure du toucher. « Annuler » remet l'état
+    // d'avant sans rien écrire. Changer de mode, réinitialiser, fermer la page : on valide tout de suite.
+    const DELAI_ANNULATION = 5000;
+    const NOUVEAU_STATUT = { touche: 'touche', evacue: 'evacue', retabli: 'normal' };
+    let attente = null;   // { p, action, avant, statutAvant, date, sim, minuteur }
+    const annulation = {
+      boite: document.getElementById('annulation'),
+      texte: document.getElementById('annulation-texte'),
+      bouton: document.getElementById('annulation-bouton')
+    };
+
+    function majPoint(p) {
+      const m = marqueursPoints[p.id];
+      if (m) {
+        m.setIcon(iconePoint(p.type, p.statut === 'reference' ? 'reference' : 'crise', etatDe(p.id).statut));
+        if (m.isPopupOpen()) m.getPopup().update();
+      }
+      majSynthese();
+    }
+
+    function statutHumain(p, action) {
+      if (attente && attente.p.id !== p.id) validerAttente();      // un autre point : on écrit le précédent
+      let avant, statutAvant;
+      if (attente) {                                              // même point : le nouveau toucher remplace
+        clearTimeout(attente.minuteur);
+        avant = attente.avant; statutAvant = attente.statutAvant;
+      } else {
+        avant = etatsPoints[p.id] ? JSON.parse(JSON.stringify(etatsPoints[p.id])) : undefined;
+        statutAvant = etatDe(p.id).statut;
+      }
+      if (NOUVEAU_STATUT[action] === statutAvant) {               // retour à l'état de départ : rien à écrire
+        attente = { p, avant };
+        annulerAttente();
+        return;
+      }
+      etatsPoints[p.id] = { statut: NOUVEAU_STATUT[action], historique: avant ? avant.historique : [] };
+      attente = {
+        p, action, avant, statutAvant,
+        date: new Date().toISOString(),
+        sim: modeDemo ? Math.floor(tSim) : null,
+        minuteur: setTimeout(validerAttente, DELAI_ANNULATION)
+      };
+      annulation.texte.textContent = p.nom + ' : ' + ACTIONS[action].toLowerCase();   // nom : textContent
+      annulation.boite.hidden = false;
+      majPoint(p);
+    }
+
+    // Écrit le statut en attente : ligne d'historique + entrée de main courante, à l'heure du toucher
+    function validerAttente() {
+      if (!attente) return;
+      const a = attente;
+      attente = null;
+      clearTimeout(a.minuteur);
+      annulation.boite.hidden = true;
+      if (!a.action) return;
+      const entree = ajouterEntree({
+        type: 'evenement', texte: 'Statut de ' + a.p.nom + ' : ' + ACTIONS[a.action].toLowerCase(),
+        lieu: a.p.id, dateFaits: a.date, simFaits: a.sim
+      });
+      const ligne = { action: a.action, origine: 'humain', date: a.date, avant: a.statutAvant, entree: entree.n };
+      if (a.sim != null) ligne.sim = a.sim;
+      etatsPoints[a.p.id] = { statut: NOUVEAU_STATUT[a.action], historique: (a.avant ? a.avant.historique : []).concat([ligne]) };
+      ecrireEtats();
+      majPoint(a.p);
+      if (a.action === 'retabli') evaluerMenaces();               // retour en suivi automatique
+    }
+
+    // « Annuler » : on remet l'état d'avant, sans rien écrire dans la main courante ni l'historique
+    function annulerAttente() {
+      if (!attente) return;
+      const a = attente;
+      attente = null;
+      clearTimeout(a.minuteur);
+      annulation.boite.hidden = true;
+      if (a.avant) etatsPoints[a.p.id] = a.avant; else delete etatsPoints[a.p.id];
+      ecrireEtats();
+      majPoint(a.p);
+    }
+    annulation.bouton.addEventListener('click', annulerAttente);
+    window.addEventListener('pagehide', validerAttente);
+
+    // « Annuler ce statut » (après les 5 s) : une correction écrite, différente de « Rétabli » qui est un fait
+    function annulerStatut(p) {
+      validerAttente();
+      const e = etatDe(p.id), der = e.historique[e.historique.length - 1];
+      if (!der || der.origine !== 'humain' || !der.avant) return;
+      const entree = ajouterEntree({
+        type: 'evenement',
+        texte: 'Correction : statut de ' + p.nom + ' annulé (était : ' + ACTIONS[der.action].toLowerCase() + ')',
+        lieu: p.id, corrige: der.entree || null
+      });
+      const ligne = { action: 'annulation', origine: 'humain', date: entree.date, annule: der.action, entree: entree.n };
+      if (entree.sim != null) ligne.sim = entree.sim;
+      etatsPoints[p.id] = { statut: der.avant, historique: e.historique.concat([ligne]) };
+      ecrireEtats();
+      majPoint(p);
+      evaluerMenaces();
+    }
+
     // Suivi automatique : à chaque nouvelle hauteur (démo : à chaque pas ; réel : à chaque chargement)
     function evaluerMenaces() {
       for (const p of referentiel) {
         if (!p.station_reference || typeof p.hauteur_critique !== 'number') continue;
         const h = hauteurStation(p.station_reference);
         if (h == null) continue;                                  // pas de mesure : on ne décide rien
+        if (attente && attente.p.id === p.id) continue;           // statut humain en attente : on ne décide rien
         const statut = etatDe(p.id).statut;
         if (statut === 'normal' && h >= p.hauteur_critique) {
           changerEtat(p, 'menace', 'auto', h);
@@ -2194,7 +2332,8 @@
     function ajouterBoutonsEtat(div, p) {
       const statut = etatDe(p.id).statut;
       const boutons = creer('div', null, 'boutons-etat', div);
-      for (const [action, classe] of [['touche', 'b-touche'], ['evacue', 'b-evacue'], ['retabli', 'b-retabli']]) {
+      const boutonsListe = [['touche', 'b-touche'], ['evacue', 'b-evacue'], ['retabli', 'b-retabli']];
+      for (const [action, classe] of boutonsListe) {
         const b = creer('button', null, classe, boutons);
         b.type = 'button';
         creer('span', ACTIONS[action], null, b);
@@ -2205,11 +2344,16 @@
         b.addEventListener('click', () => {
           // On laisse le toucher se terminer avant de reconstruire la fenêtre : sinon la carte croit
           // qu'on a touché à côté de la fenêtre et la ferme.
-          setTimeout(() => {
-            changerEtat(p, action, 'humain');
-            if (action === 'retabli') evaluerMenaces();   // retour en suivi automatique
-          }, 0);
+          setTimeout(() => statutHumain(p, action), 0);
         });
+      }
+      // Après les 5 s : « Annuler ce statut » sur le dernier statut humain (une correction, pas un fait)
+      const hist = etatDe(p.id).historique, der = hist[hist.length - 1];
+      if (der && der.origine === 'humain' && ['touche', 'evacue', 'retabli'].includes(der.action) && der.avant
+          && !(attente && attente.p.id === p.id)) {
+        const lien = creer('button', 'Annuler ce statut', 'annuler-statut', div);
+        lien.type = 'button';
+        lien.addEventListener('click', () => setTimeout(() => annulerStatut(p), 0));
       }
     }
 
@@ -2244,7 +2388,8 @@
         const liste = el('ol', null, 'historique');
         for (const h of [...historique].reverse().slice(0, 10)) {
           const li = el('li', null, null, liste);
-          li.append((h.sim != null ? heureSimulee(h.sim) : dateHeure(h.date)) + ' · ' + ACTIONS[h.action] + ' ');
+          li.append((h.sim != null ? heureSimulee(h.sim) : dateHeure(h.date)) + ' · ' + ACTIONS[h.action]
+            + (h.action === 'annulation' && h.annule ? ' (était : ' + ACTIONS[h.annule] + ')' : '') + ' ');
           el('span', '(' + (h.origine === 'auto' ? 'auto' : 'humain') + ')', 'origine', li);
         }
       }
@@ -2455,6 +2600,7 @@
 
     // Nouvelle lecture : horloge à J+0, main courante et points de la démo remis à zéro
     function nouvelleLecture() {
+      validerAttente();                      // un statut en attente est écrit avant la remise à zéro
       try { localStorage.removeItem(DEMO_MC_CLE); } catch (e) { /* rien à faire */ }
       try { localStorage.removeItem(DEMO_PS_CLE); } catch (e) { /* rien à faire */ }
       try { localStorage.removeItem(DEMO_ETATS_CLE); } catch (e) { /* rien à faire */ }
@@ -2477,6 +2623,7 @@
     }
 
     async function entrerDemo() {
+      validerAttente();                      // rien ne se perd en silence en changeant de mode
       demo.entrer.disabled = true;
       const ok = await chargerScenario();
       demo.entrer.disabled = false;
@@ -2496,6 +2643,7 @@
     }
 
     function quitterDemo() {
+      validerAttente();                      // écrit dans la main courante de démo, avant de la quitter
       clearInterval(minuteurDemo);
       minuteurDemo = null;
       enLecture = false;
