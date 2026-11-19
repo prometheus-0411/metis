@@ -50,8 +50,9 @@
       --violet: #7b1fa2;
       --haut-bandeau: 76px;    /* bandeau du haut : titre + synthèse (mesuré en direct par le script) */
       --entete: var(--haut-bandeau);                  /* hauteur totale des bandeaux fixes en haut */
+      --haut-demo: 44px;                              /* barre orange DÉMO (56 px sur écran tactile) */
     }
-    body.demo { --entete: calc(var(--haut-bandeau) + 44px); }   /* + bandeau orange DÉMO (44 px) */
+    body.demo { --entete: calc(var(--haut-bandeau) + var(--haut-demo)); }   /* + bandeau orange DÉMO */
     html, body {
       margin: 0;
       height: 100%;
@@ -530,7 +531,7 @@
     #demo-barre {
       position: fixed;
       top: var(--haut-bandeau); left: 0; right: 0;
-      height: 44px;
+      height: var(--haut-demo);
       box-sizing: border-box;
       z-index: 2000;
       display: flex; align-items: center; gap: 6px;
@@ -540,6 +541,7 @@
       box-shadow: 0 2px 6px rgba(0,0,0,.3);
       white-space: nowrap;
     }
+    .demo-temps { display: flex; align-items: center; gap: 6px; flex: none; }
     .demo-etiquette {
       font-weight: 800; letter-spacing: .08em; font-size: 14px;
       padding: 3px 8px; border-radius: 4px;
@@ -555,6 +557,11 @@
       .texte-court { display: inline; }
       .demo-btn { min-width: 32px; padding: 0 6px; }
       #demo-horloge { font-size: 16px; }
+    }
+    /* Téléphone : « DÉMO » au-dessus de l'horloge, pour que les boutons de 44 px tiennent sur la ligne */
+    @media (max-width: 767px) {
+      .demo-temps { flex-direction: column; align-items: flex-start; gap: 1px; }
+      .demo-temps .demo-etiquette { font-size: 12px; padding: 1px 6px; }
     }
     .demo-btn {
       font: inherit; font-size: 14px; font-weight: 600;
@@ -633,6 +640,54 @@
         padding: 12px 16px;
       }
     }
+
+    /* =====================================================================
+       ZONES TACTILES (session UX 1) : 44 × 44 px minimum au doigt, 8 px entre deux zones.
+       Seulement sur écran tactile : sur ordinateur, rien ne grossit.
+       Quand le dessin doit rester petit (liens discrets), c'est une zone invisible (::after)
+       qui agrandit la surface de toucher.
+       ===================================================================== */
+    @media (pointer: coarse) {
+      :root { --haut-demo: 56px; }
+      /* Bandeau : boutons de 44 px, 8 px entre la ligne du titre et la synthèse */
+      #bandeau { gap: 8px; padding-top: 4px !important; }
+      .ligne-titre { height: auto; min-height: 44px; }
+      #actualiser, #demo-entrer { min-height: 44px; }
+      /* « Détails » : toute la ligne de synthèse devient la zone de toucher (44 px de haut au moins) */
+      .ligne-synthese { position: relative; }
+      .ligne-synthese:has(#synthese-details-bouton:not([hidden])) { min-height: 44px; align-items: center; }
+      #synthese-details-bouton::after { content: ''; position: absolute; inset: 0; }
+      #synthese-details button { min-height: 44px; }
+      /* Barre démo : boutons de 44 px espacés de 8 px */
+      #demo-barre { gap: 8px; }
+      .demo-btn, #demo-quitter { min-width: 44px; height: 44px; }
+      /* Carte : zoom + / − de 44 px, séparés de 8 px ; croix des fenêtres de 44 px ; légende */
+      .leaflet-touch .leaflet-control-zoom { border: none; display: flex; flex-direction: column; gap: 8px; }
+      .leaflet-touch .leaflet-control-zoom a {
+        width: 44px; height: 44px; line-height: 40px; font-size: 24px;
+        border: 2px solid rgba(0,0,0,.2); border-radius: 4px;
+      }
+      .leaflet-container a.leaflet-popup-close-button { width: 44px; height: 44px; font-size: 24px; line-height: 44px; top: 0; right: 0; }
+      .leaflet-popup-content { margin-right: 40px; }
+      .legende-bouton { min-height: 44px; padding: 0 4px; }
+      .ps-bouton { min-height: 44px; }
+      #message button { min-height: 44px; }
+      /* Main courante : menus, champ, boutons */
+      #mc-type, #mc-lieu, #ps-type, #ps-nom { min-height: 44px; }
+      #mc-ajouter, #ps-creer, #ps-annuler, #mc-oui, #mc-non { min-height: 44px; }
+      #mc-correction button { min-height: 44px; padding: 0 8px; }
+      #mc-reinit { min-height: 44px; padding: 0 8px; }
+      /* Entrées : « Corriger » et 📍 gardent leur dessin, leur zone de toucher passe à 44 px.
+         Plus d'air entre et dans les entrées, pour garder 8 px entre deux zones voisines. */
+      #mc-liste { gap: 16px; }
+      .mc-entree { padding: 10px 12px; }
+      .mc-entree button { position: relative; }
+      .mc-entree button::after {
+        content: ''; position: absolute;
+        left: -8px; right: -8px; top: 50%; height: 44px; transform: translateY(-50%);
+      }
+      .mc-entree .mc-lieu { margin-top: 16px; }
+    }
     /* Un champ qui reçoit le clavier ne s'arrête jamais sous le bandeau */
     input, select, textarea { scroll-margin-top: calc(var(--entete) + 16px); }
   </style>
@@ -652,8 +707,10 @@
   <div id="synthese-details" hidden role="region" aria-label="Synthèse détaillée"></div>
   <!-- Bandeau du mode démo : horloge simulée et commandes de lecture -->
   <div id="demo-barre" hidden role="region" aria-label="Mode démo">
-    <span class="demo-etiquette">DÉMO</span>
-    <span id="demo-horloge" aria-live="off">J+0 06:00</span>
+    <span class="demo-temps">
+      <span class="demo-etiquette">DÉMO</span>
+      <span id="demo-horloge" aria-live="off">J+0 06:00</span>
+    </span>
     <span id="demo-phase"></span>
     <button type="button" class="demo-btn" id="demo-lecture" aria-label="Pause">⏸</button>
     <button type="button" class="demo-btn" id="demo-vitesse" aria-label="Changer la vitesse">×1</button>
