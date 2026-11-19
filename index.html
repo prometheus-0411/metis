@@ -507,6 +507,37 @@
        Le fond transparent de ce calque laisse passer le toucher ; seuls les ronds le captent
        (et plus rien en mode placement, grâce à la règle .leaflet-interactive ci-dessus). */
     .leaflet-stations-pane > svg { pointer-events: none; }
+
+    /* ---------- Stations : rond de 24 px + symbole (l'état se lit sans la couleur) ----------
+       ✓ normal · ! vigilance · !! alerte · ? sans donnée (pointillés) · – sans seuil.
+       Le marqueur (.st-marqueur) est la zone de toucher : 28 px, 44 px sur écran tactile. */
+    .st-marqueur { width: 28px; height: 28px; margin: -14px 0 0 -14px; display: flex; align-items: center; justify-content: center; }
+    .st-icone {
+      width: 24px; height: 24px; box-sizing: border-box;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 50%; border: 2px solid #fff;
+      box-shadow: 0 1px 4px rgba(0,0,0,.45);
+      color: #fff; font: 800 12px/1 system-ui, -apple-system, sans-serif; letter-spacing: -.5px;
+    }
+    .st-normal { background: #2e7d32; }
+    .st-vigilance { background: #ef6c00; }
+    .st-alerte { background: #c62828; }
+    .st-inconnu { background: #8a94a3; border: 2px dashed #fff; }
+    .st-sansSeuil { background: #8a94a3; }
+    @media (pointer: coarse) { .st-marqueur { width: 44px; height: 44px; margin: -22px 0 0 -22px; } }
+
+    /* ---------- Points : pastille de 16 px en haut à droite, en plus de l'anneau ----------
+       ! menacé · ✕ touché · ↗ évacué (texte blanc, contraste ≥ 4,5:1) */
+    .ps-icone { position: relative; }
+    .ps-icone.etat-menace::after, .ps-icone.etat-touche::after, .ps-icone.etat-evacue::after {
+      position: absolute; top: -8px; right: -8px;
+      width: 16px; height: 16px; box-sizing: border-box;
+      border-radius: 50%; border: 1px solid #fff;
+      color: #fff; font: 800 12px/14px system-ui, -apple-system, sans-serif; text-align: center;
+    }
+    .ps-icone.etat-menace::after { content: '!'; background: #c2410c; }
+    .ps-icone.etat-touche::after { content: '✕'; background: #c62828; }
+    .ps-icone.etat-evacue::after { content: '↗\FE0E'; background: #7b1fa2; }
     /* Fenêtre d'un point : état, suivi automatique, boutons, historique */
     .etat-point { display: inline-block; margin: 0 0 4px 6px; font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 10px; color: #fff; }
     .etat-point.normal { background: #e8ecf1; color: #1b2430; border: 1px solid #c5ccd6; }
@@ -872,6 +903,18 @@
       inconnu:   { libelle: 'Sans donnée', couleur: 'var(--gris)',   hexa: '#8a94a3', badge: '#5d6b7c' }
     };
 
+    // Icône d'une station : rond + symbole. cle : normal, vigilance, alerte, inconnu (sans donnée), sansSeuil
+    const SYMBOLES_STATION = { normal: '✓', vigilance: '!', alerte: '!!', inconnu: '?', sansSeuil: '–' };
+    function iconeStation(cle) {
+      return L.divIcon({
+        className: 'st-marqueur',
+        html: '<div class="st-icone st-' + cle + '"><span aria-hidden="true">' + SYMBOLES_STATION[cle] + '</span></div>',
+        iconSize: null,            // taille et centrage donnés par la CSS (zone de toucher de 44 px au doigt)
+        popupAnchor: [0, -12]
+      });
+    }
+    const LIBELLES_STATION = { normal: 'Normal', vigilance: 'Vigilance', alerte: 'Alerte', inconnu: 'Sans donnée', sansSeuil: 'Sans seuil' };
+
     // Légende des couleurs, en bas à gauche
     const legende = L.control({ position: 'bottomleft' });
     legende.onAdd = function () {
@@ -1177,13 +1220,12 @@
       const ordre = { inconnu: 0, normal: 1, vigilance: 2, alerte: 3 };
       resultats.sort((a, b) => ordre[a.etat] - ordre[b.etat]);
       for (const r of resultats) {
-        L.circleMarker([r.station.latitude_station, r.station.longitude_station], {
+        const cle = r.etat !== 'inconnu' ? r.etat : (r.mesure && r.recente ? 'sansSeuil' : 'inconnu');
+        L.marker([r.station.latitude_station, r.station.longitude_station], {
           pane: 'stations',
-          radius: r.etat === 'inconnu' ? 7 : 9,
-          color: '#fff',
-          weight: 2,
-          fillColor: ETATS[r.etat].hexa,
-          fillOpacity: 0.95
+          icon: iconeStation(cle),
+          title: (r.station.libelle_station || r.station.code_station) + ' : ' + LIBELLES_STATION[cle],
+          zIndexOffset: ordre[r.etat] * 100        // les plus graves au-dessus
         })
           .bindPopup(contenuBulle(r))
           .addTo(calqueStations);
@@ -2156,6 +2198,7 @@
     let debutMinutes = 6 * 60;  // heure simulée du début (lue dans le scénario)
     const calqueDemo = L.layerGroup();
     const marqueursDemo = {};   // code station → marqueur simulé
+    const derniereCleDemo = {}; // code station → symbole affiché (on ne redessine que s'il change)
 
     const deuxChiffres = n => String(n).padStart(2, '0');
 
@@ -2236,13 +2279,14 @@
     function construireStationsDemo() {
       calqueDemo.clearLayers();
       for (const code in marqueursDemo) delete marqueursDemo[code];
+      for (const code in derniereCleDemo) delete derniereCleDemo[code];
       for (const station of scenario.stations) {
-        marqueursDemo[station.code] = L.circleMarker([station.lat, station.lng], {
-          pane: 'stations',
-          radius: 9, color: '#fff', weight: 2, fillColor: ETATS.normal.hexa, fillOpacity: 0.95
+        marqueursDemo[station.code] = L.marker([station.lat, station.lng], {
+          pane: 'stations', icon: iconeStation('normal'), title: station.nom
         })
           .bindPopup(() => bulleStationDemo(station))
           .addTo(calqueDemo);
+        derniereCleDemo[station.code] = 'normal';
       }
     }
 
@@ -2254,7 +2298,13 @@
         const e = etatSimule(station, hauteurSimulee(station, tSim));
         if (e === 'inconnu') c.sansSeuil++; else c[e]++;
         const m = marqueursDemo[station.code];
-        m.setStyle({ fillColor: ETATS[e].hexa });
+        const cle = e === 'inconnu' ? 'sansSeuil' : e;
+        if (derniereCleDemo[station.code] !== cle) {
+          derniereCleDemo[station.code] = cle;
+          m.setIcon(iconeStation(cle));
+          m.setZIndexOffset({ normal: 100, vigilance: 200, alerte: 300 }[cle] || 0);
+          m.getElement() && m.getElement().setAttribute('title', station.nom + ' : ' + LIBELLES_STATION[cle]);
+        }
         if (m.isPopupOpen()) m.getPopup().setContent(bulleStationDemo(station));
       }
       stationsDemo = c;
