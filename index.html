@@ -358,6 +358,13 @@
       border: none; background: none; padding: 0;
       color: var(--type-decision); cursor: pointer; text-decoration: underline;
     }
+    /* « Corriger » / « Annoter » : discrets (gris, souligné léger), zone de toucher agrandie sur écran tactile */
+    .mc-entree button.mc-action {
+      color: var(--mc-discret); font-weight: 600;
+      text-decoration: underline; text-decoration-color: #c5ccd6; text-underline-offset: 3px;
+    }
+    .mc-entree button.mc-action:hover { color: var(--mc-texte); text-decoration-color: currentColor; }
+    #mc-type:disabled { color: var(--mc-texte); background: var(--mc-fond); opacity: 1; }
     #mc-pied {
       padding: 8px 16px calc(8px + env(safe-area-inset-bottom, 0px));
       border-top: 1px solid var(--mc-bord);
@@ -810,7 +817,7 @@
       <div id="app-avertissement" hidden></div>
       <ol id="mc-liste" aria-live="polite"></ol>
       <div id="mc-pied">
-        <span>Entrées non modifiables. Pour corriger : « Corriger ».</span>
+        <span>Entrées non modifiables : « Corriger » ou « Annoter » ajoute une nouvelle entrée.</span>
         <button type="button" id="mc-reinit">Réinitialiser (démo)</button>
         <div id="mc-confirmation" hidden>
           <span id="mc-confirmation-texte"></span>
@@ -1234,6 +1241,7 @@
     };
     let entrees = [];          // la liste des entrées, de la plus ancienne à la plus récente
     let correctionDe = null;   // numéro de l'entrée en cours de correction, ou null
+    let annotationDe = null;   // numéro de l'entrée (écrite par la machine) en cours d'annotation, ou null
     let stockageOk = true;
 
     function lireStockage() {
@@ -1295,8 +1303,11 @@
         return;
       }
       // Qui corrige qui (calculé à l'affichage : l'entrée d'origine n'est jamais modifiée)
-      const corrigeePar = {};
-      for (const e of entrees) if (e.corrige) (corrigeePar[e.corrige] = corrigeePar[e.corrige] || []).push(e.n);
+      const corrigeePar = {}, annoteePar = {};
+      for (const e of entrees) {
+        if (e.corrige) (corrigeePar[e.corrige] = corrigeePar[e.corrige] || []).push(e.n);
+        if (e.annote) (annoteePar[e.annote] = annoteePar[e.annote] || []).push(e.n);
+      }
 
       for (const e of [...entrees].reverse()) {
         const type = MC_TYPES[e.type] || MC_TYPES.information;
@@ -1332,17 +1343,21 @@
           marque.textContent = e.iaModifie ? 'IA corrigée' : 'IA relue';
           entete.appendChild(marque);
         }
+        // Saisie humaine : « Corriger ». Écrit par la machine (scénario, alerte auto, point de situation IA) :
+        // « Annoter » — on n'en corrige pas le contenu, on y ajoute une remarque humaine.
+        const parLaMachine = !!(e.scenario || e.auto || e.ia);
         const corriger = document.createElement('button');
         corriger.type = 'button';
-        corriger.textContent = 'Corriger';
-        corriger.addEventListener('click', () => commencerCorrection(e.n));
+        corriger.className = 'mc-action';
+        corriger.textContent = parLaMachine ? 'Annoter' : 'Corriger';
+        corriger.addEventListener('click', () => (parLaMachine ? commencerAnnotation(e.n) : commencerCorrection(e.n)));
         entete.append(heure, corriger);
         li.appendChild(entete);
 
-        if (e.corrige) {
+        if (e.corrige || e.annote) {
           const lien = document.createElement('div');
           lien.className = 'mc-lien';
-          lien.textContent = 'Correction de #' + e.corrige;
+          lien.textContent = e.corrige ? 'Correction de #' + e.corrige : 'Annotation de #' + e.annote;
           li.appendChild(lien);
         }
         const texte = document.createElement('div');
@@ -1377,11 +1392,18 @@
           note.textContent = 'Corrigée par ' + corrigeePar[e.n].map(n => '#' + n).join(', ');
           li.appendChild(note);
         }
+        if (annoteePar[e.n]) {
+          const note = document.createElement('div');
+          note.className = 'mc-lien';
+          note.textContent = 'Annotée par ' + annoteePar[e.n].map(n => '#' + n).join(', ');
+          li.appendChild(note);
+        }
         mc.liste.appendChild(li);
       }
     }
 
     function commencerCorrection(n) {
+      annulerCorrection();
       correctionDe = n;
       mc.correctionTexte.textContent = 'Correction de #' + n;
       mc.correction.hidden = false;
@@ -1393,8 +1415,24 @@
       mc.texte.focus();
     }
 
+    // Annotation d'une entrée écrite par la machine : nouvelle entrée Information « Annotation de #N »
+    function commencerAnnotation(n) {
+      annulerCorrection();
+      annotationDe = n;
+      mc.correctionTexte.textContent = 'Annotation de #' + n;
+      mc.correction.hidden = false;
+      mc.type.value = 'information';
+      mc.type.disabled = true;           // une annotation est toujours une Information
+      const origine = entrees.find(e => e.n === n);
+      mc.lieu.value = origine && origine.lieu && trouverPoint(origine.lieu) ? origine.lieu : '';
+      mc.texte.focus();
+    }
+
+    // Annule une correction ou une annotation en cours
     function annulerCorrection() {
       correctionDe = null;
+      annotationDe = null;
+      mc.type.disabled = false;
       mc.correction.hidden = true;
     }
 
@@ -1407,14 +1445,18 @@
         return;
       }
       mc.erreur.textContent = '';
-      ajouterEntree({ type: mc.type.value, texte, corrige: correctionDe, lieu: mc.lieu.value || null });
+      if (annotationDe) {
+        ajouterEntree({ type: 'information', texte, annote: annotationDe, lieu: mc.lieu.value || null });
+      } else {
+        ajouterEntree({ type: mc.type.value, texte, corrige: correctionDe, lieu: mc.lieu.value || null });
+      }
       mc.texte.value = '';
       mc.lieu.value = '';
       annulerCorrection();
     });
 
     // Ajoute une entrée (formulaire, création d'un point, ou information du scénario de démo)
-    function ajouterEntree({ type, texte, corrige, lieu, scenario, auto, ia }) {
+    function ajouterEntree({ type, texte, corrige, annote, lieu, scenario, auto, ia }) {
       // On relit le stockage juste avant d'ajouter (au cas où un autre onglet aurait écrit entre-temps)
       const enStock = lireStockage();
       if (enStock.length > entrees.length) entrees = enStock;
@@ -1425,6 +1467,7 @@
         date: new Date().toISOString()   // heure réelle de saisie, toujours conservée
       };
       if (corrige) entree.corrige = corrige;
+      if (annote) entree.annote = annote;
       if (lieu) entree.lieu = lieu;
       if (auto) entree.auto = true;
       if (ia) { entree.ia = true; entree.iaModifie = !!ia.modifie; }
@@ -2626,7 +2669,8 @@
           const origine = e.scenario ? 'scénario' + (e.source ? ', source : ' + e.source : '')
             : e.auto ? 'automatique' : e.ia ? 'point de situation validé' : 'saisie humaine';
           l.push('[#' + e.n + '] ' + heureAffichee(e) + ' · ' + type + ' (' + origine + ')'
-            + (e.corrige ? ' · corrige #' + e.corrige : '') + (lieu ? ' · lieu : ' + lieu : '')
+            + (e.corrige ? ' · corrige #' + e.corrige : '') + (e.annote ? ' · annote #' + e.annote : '')
+            + (lieu ? ' · lieu : ' + lieu : '')
             + ' · ' + String(e.texte).replace(/\s+/g, ' ').slice(0, 400));
         }
         return l;
