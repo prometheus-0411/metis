@@ -201,6 +201,25 @@
       margin-bottom: 36px !important; /* laisse la place à la ligne des crédits en bas */
     }
     .legende .ligne { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+    /* Légende en 4 blocs, avec les formes et symboles de la carte ; défile si elle est trop haute */
+    .legende { max-width: min(320px, calc(100vw - 40px)); box-sizing: border-box; }
+    .legende-corps { max-height: calc((100vh - var(--entete)) * .6); overflow-y: auto; overscroll-behavior: contain; padding-right: 4px; }
+    .leg-bloc { padding: 4px 0 6px; }
+    .leg-bloc + .leg-bloc { border-top: 1px solid #e3e7ed; }
+    .leg-titre { font-weight: 700; color: #1b2430; margin-bottom: 2px; }
+    .leg-lignes { display: grid; grid-template-columns: auto auto; column-gap: 12px; row-gap: 2px; }
+    .legende .ligne { min-height: 22px; }
+    .legende .st-icone { width: 18px; height: 18px; font-size: 12px; border-width: 1px; box-shadow: none; }
+    .legende .st-icone.st-inconnu { border-width: 1px; }
+    .legende .ps-icone { width: 18px; height: 18px; flex: none; box-shadow: none; animation: none; margin: 4px 8px 0 2px; }
+    .legende .ps-icone.etat-menace { box-shadow: 0 0 0 1px #fff, 0 0 0 4px var(--orange); }
+    .legende .ps-icone.etat-touche { box-shadow: 0 0 0 1px #fff, 0 0 0 4px var(--rouge); }
+    .legende .ps-icone.etat-evacue { box-shadow: 0 0 0 1px #fff, 0 0 0 4px var(--violet); }
+    .legende .ps-icone.crise { border-radius: 4px; }
+    .leg-famille { margin-top: 4px; }
+    .leg-famille-nom { font-weight: 600; color: #1b2430; }
+    .leg-types { display: flex; flex-wrap: wrap; gap: 2px 10px; }
+    .leg-type { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; color: #1b2430; }
     /* Légende repliable : un toucher sur « Légende » l'ouvre ou la referme */
     .legende-bouton {
       display: flex; align-items: center; gap: 6px;
@@ -261,11 +280,8 @@
       #panneau { border-left: none; border-top: 1px solid var(--mc-bord); }
       #mc-liste { flex: none; overflow: visible; }
       .legende { padding: 5px 8px; font-size: 12px; line-height: 1.5; }
-      .legende-corps {
-        display: grid;
-        grid-template-columns: auto auto;
-        column-gap: 10px;
-      }
+      /* téléphone : dépliée, la légende prend au plus 60 % de la carte (55 % de l'écran) et défile */
+      .legende-corps { max-height: 33vh; max-height: 33svh; }
       .legende .rond { width: 9px; height: 9px; }
       .legende .note { grid-column: 1 / -1; font-size: 12px; }
     }
@@ -968,7 +984,8 @@
     }
     const LIBELLES_STATION = { normal: 'Normal', vigilance: 'Vigilance', alerte: 'Alerte', inconnu: 'Sans donnée', sansSeuil: 'Sans seuil' };
 
-    // Légende des couleurs, en bas à gauche
+    // Légende en bas à gauche (contenu : remplirLegende, plus bas)
+    let legendeCorps = null;
     const legende = L.control({ position: 'bottomleft' });
     legende.onAdd = function () {
       const div = L.DomUtil.create('div', 'legende');
@@ -986,34 +1003,8 @@
       const corps = document.createElement('div');
       corps.className = 'legende-corps';
       div.appendChild(corps);
-      const lignes = [
-        [ETATS.normal.hexa, 'Normal'],
-        [ETATS.vigilance.hexa, 'Vigilance'],
-        [ETATS.alerte.hexa, 'Alerte'],
-        [ETATS.inconnu.hexa, 'Sans donnée'],
-        ['anneau', 'Référencé'],
-        ['anneau crise', 'Ajouté en crise'],
-        ['anneau etat-menace', 'Menacé (auto)'],
-        ['anneau etat-touche', 'Touché'],
-        ['anneau etat-evacue', 'Évacué']
-      ];
-      for (const [couleur, texte] of lignes) {
-        const ligne = document.createElement('div');
-        ligne.className = 'ligne';
-        const rond = document.createElement('span');
-        if (couleur.startsWith('anneau')) {
-          rond.className = couleur;
-        } else {
-          rond.className = 'rond';
-          rond.style.background = couleur;
-        }
-        ligne.append(rond, document.createTextNode(texte));
-        corps.appendChild(ligne);
-      }
-      const note = document.createElement('div');
-      note.className = 'note';
-      note.textContent = 'Seuils de démo, non officiels';
-      corps.appendChild(note);
+      legendeCorps = corps;          // rempli par remplirLegende(), une fois les types de points connus
+      L.DomEvent.disableScrollPropagation(div);   // faire défiler la légende ne zoome pas la carte
       return div;
     };
     legende.addTo(carte);
@@ -1720,6 +1711,32 @@
       }
       ps.type.appendChild(groupe);
     }
+
+
+    // Légende : 4 blocs, avec les mêmes formes et symboles que la carte (contenu = constantes du code)
+    function remplirLegende() {
+      if (!legendeCorps) return;
+      const ligne = (dessin, texte) => '<div class="ligne">' + dessin + '<span>' + texte + '</span></div>';
+      const station = cle => '<span class="st-icone st-' + cle + '" aria-hidden="true">' + SYMBOLES_STATION[cle] + '</span>';
+      const point = classes => '<span class="ps-icone ' + classes + '" aria-hidden="true"></span>';
+      let html = '<div class="leg-bloc"><div class="leg-titre">Stations</div><div class="leg-lignes">'
+        + ['normal', 'vigilance', 'alerte', 'inconnu', 'sansSeuil'].map(c => ligne(station(c), LIBELLES_STATION[c])).join('')
+        + '</div></div>';
+      html += '<div class="leg-bloc"><div class="leg-titre">État des points</div><div class="leg-lignes">'
+        + ligne(point('reference etat-menace'), 'Menacé (auto)') + ligne(point('reference etat-touche'), 'Touché')
+        + ligne(point('reference etat-evacue'), 'Évacué') + '</div></div>';
+      html += '<div class="leg-bloc"><div class="leg-titre">Points</div><div class="leg-lignes">'
+        + ligne(point('reference'), 'Référencé') + ligne(point('crise'), 'Ajouté en crise') + '</div></div>';
+      html += '<div class="leg-bloc"><div class="leg-titre">Familles</div>';
+      for (const [cleF, f] of Object.entries(PS_FAMILLES)) {
+        const types = Object.values(PS_TYPES).filter(t => t.famille === cleF);
+        html += '<div class="leg-famille"><div class="leg-famille-nom">' + f.libelle + '</div><div class="leg-types">'
+          + types.map(t => '<span class="leg-type">' + svg(t.icone, 16) + t.libelle + '</span>').join('') + '</div></div>';
+      }
+      html += '</div><div class="note">Seuils de démo, non officiels</div>';
+      legendeCorps.innerHTML = html;
+    }
+    remplirLegende();
 
     function typePoint(p) { return PS_TYPES[p.type] || PS_TYPES.autre; }
     function famillePoint(p) { return PS_FAMILLES[typePoint(p).famille]; }
