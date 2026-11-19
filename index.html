@@ -1767,6 +1767,19 @@
     };
     controleRecentrer.addTo(carte);
 
+    // Sur téléphone, le zoom et « Recentrer » (44 px) passent au-dessus des fenêtres et cachaient les
+    // boutons « Touché »… : comme la légende, on les masque tant qu'une fenêtre est ouverte.
+    const PETIT_ECRAN = window.matchMedia('(max-width: 767px)');
+    carte.on('popupopen', () => {
+      if (!PETIT_ECRAN.matches) return;
+      carte.zoomControl.getContainer().hidden = true;
+      controleRecentrer.getContainer().hidden = true;
+    });
+    carte.on('popupclose', () => {
+      carte.zoomControl.getContainer().hidden = false;
+      controleRecentrer.getContainer().hidden = false;
+    });
+
     // Points référencés : fichier referentiel-points.json, à côté de index.html
     async function chargerReferentiel() {
       try {
