@@ -582,6 +582,22 @@
       .annuler-statut { margin: 12px 0 14px; }
     }
 
+    /* Fenêtre d'un point compacte : l'essentiel visible, le reste dans « Plus d'infos » */
+    .badges-point { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 4px 0; }
+    .badges-point .statut, .badges-point .etat-point { margin: 0; }
+    .bulle .info { margin: 2px 0; }
+    .bulle .info .lib { color: #5d6b7c; }
+    .bulle .info .val { color: #1b2430; }
+    .plus-infos { margin-top: 6px; border-top: 1px solid #e3e7ed; padding-top: 4px; }
+    .plus-infos summary {
+      cursor: pointer; font-size: 14px; font-weight: 600; color: #1b2430;
+      min-height: 32px; display: flex; align-items: center; gap: 6px; list-style: none;
+    }
+    .plus-infos summary::-webkit-details-marker { display: none; }
+    .plus-infos summary::before { content: '▸'; font-size: 12px; color: #5d6b7c; }
+    .plus-infos[open] summary::before { content: '▾'; }
+    @media (pointer: coarse) { .plus-infos summary { min-height: 44px; } }
+
     /* Fenêtre d'un point : état, suivi automatique, boutons, historique */
     .etat-point { display: inline-block; margin: 0 0 4px 6px; font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 10px; color: #fff; }
     .etat-point.normal { background: #e8ecf1; color: #1b2430; border: 1px solid #c5ccd6; }
@@ -982,6 +998,8 @@
 
     // Vrai pendant le mode démo (déclaré ici : le chargement des stations le consulte)
     let modeDemo = false;
+    // Téléphone (écran étroit) : fenêtres compactes, contrôles masqués pendant une fenêtre…
+    const PETIT_ECRAN = window.matchMedia('(max-width: 767px)');
 
     // Carte centrée sur Lyon, zoom 12
     const carte = L.map('carte').setView([45.764, 4.836], 12);
@@ -1045,6 +1063,18 @@
     // sur un petit écran, la légende cachait les boutons. On la masque tant qu'une fenêtre est ouverte.
     carte.on('popupopen', () => { legende.getContainer().hidden = true; });
     carte.on('popupclose', () => { legende.getContainer().hidden = false; });
+    // Le cadre d'erreur Hub'Eau recouvrait les boutons d'une fenêtre ouverte : on le masque tant qu'une
+    // fenêtre est ouverte (le bandeau dit déjà « Stations indisponibles ») et on le remet à la fermeture,
+    // sauf si l'utilisateur l'avait fermé lui-même.
+    let fenetreOuverte = false, messageMasqueParFenetre = false;
+    carte.on('popupopen', () => {
+      fenetreOuverte = true;
+      if (!message.hidden) { message.hidden = true; messageMasqueParFenetre = true; }
+    });
+    carte.on('popupclose', () => {
+      fenetreOuverte = false;
+      if (messageMasqueParFenetre) { message.hidden = false; messageMasqueParFenetre = false; }
+    });
 
     // ---------- Stations hydrométriques (API Hub'Eau Hydrométrie v2) ----------
     // Doc : https://hubeau.eaufrance.fr/page/api-hydrometrie
@@ -1198,9 +1228,10 @@
       fermer.type = 'button';
       fermer.textContent = 'Fermer';
       fermer.style.marginLeft = '8px';
-      fermer.addEventListener('click', () => { message.hidden = true; });
+      fermer.addEventListener('click', () => { message.hidden = true; messageMasqueParFenetre = false; });
       message.append(p, bouton, fermer);
       message.hidden = false;
+      if (fenetreOuverte) { message.hidden = true; messageMasqueParFenetre = true; }   // réaffiché à la fermeture
     }
 
     // Récupère tout ce qu'il faut savoir sur une station (sans jamais faire échouer les autres)
@@ -1278,6 +1309,7 @@
     // Remplace les stations affichées par un nouveau chargement réussi
     function afficherStations(resultats) {
       message.hidden = true;
+      messageMasqueParFenetre = false;
       calqueStations.clearLayers();
       derniersResultats = resultats;   // gardés pour la fiche de faits du point de situation
       chargement.reussite = new Date();
@@ -1803,45 +1835,65 @@
       });
     }
 
-    // Fenêtre d'un point : nom, statut, famille, type, puis détails et entrées liées
+    // Fenêtre d'un point, compacte : titre, badges, boutons (et « Lieu fictif ») toujours visibles ;
+    // le reste dans « Plus d'infos » (replié sur téléphone, déplié sur ordinateur).
+    const detailsOuverts = {};   // identifiant du point → volet « Plus d'infos » ouvert ou non (gardé entre deux mises à jour)
+    function ligneInfo(parent, libelle, valeur, classe) {
+      const ligne = document.createElement('p');
+      ligne.className = 'info' + (classe ? ' ' + classe : '');
+      const lib = document.createElement('span');
+      lib.className = 'lib';
+      lib.textContent = libelle + ' : ';
+      const val = document.createElement('span');
+      val.className = 'val';
+      val.textContent = valeur;                 // valeurs (dont textes saisis) : toujours en textContent
+      ligne.append(lib, val);
+      parent.appendChild(ligne);
+      return ligne;
+    }
     function bullePoint(p) {
       const t = typePoint(p);
       const reference = p.statut === 'reference';
       const div = document.createElement('div');
-      div.className = 'bulle';
-      const ajouter = (balise, texte, classe) => {
-        const el = document.createElement(balise);
-        el.textContent = texte;
-        if (classe) el.className = classe;
-        div.appendChild(el);
-        return el;
-      };
-      const titre = ajouter('h3', '');
+      div.className = 'bulle bulle-point';
+      // Titre : icône + nom
+      const titre = document.createElement('h3');
       titre.className = 'titre-point';
       titre.innerHTML = svg(t.icone, 18);
       const nomPoint = document.createElement('span');
       nomPoint.textContent = p.nom;
       titre.appendChild(nomPoint);
-      ajouter('span', reference ? 'Référencé' : 'Ajouté en crise', 'statut ' + (reference ? 'reference' : 'crise'));
+      div.appendChild(titre);
+      // Badges
+      const badges = document.createElement('div');
+      badges.className = 'badges-point';
+      creer('span', reference ? 'Référencé' : 'Ajouté en crise', 'statut ' + (reference ? 'reference' : 'crise'), badges);
       const statutActuel = etatDe(p.id).statut;
-      ajouter('span', 'État : ' + ETATS_POINT[statutActuel].libelle, 'etat-point ' + statutActuel);
-      ajouterBoutonsEtat(div, p);   // en haut de la fenêtre : toujours visibles, même sur téléphone
-      ajouter('p', 'Famille : ' + famillePoint(p).libelle);
-      ajouter('p', 'Type : ' + t.libelle);
+      creer('span', 'État : ' + ETATS_POINT[statutActuel].libelle, 'etat-point ' + statutActuel, badges);
+      div.appendChild(badges);
+      // Boutons (et lien « Annuler ce statut »)
+      ajouterBoutonsEtat(div, p);
+      if (p.fictif) creer('p', 'Lieu fictif : nom et emplacement inventés pour la démonstration.', 'a-verifier', div);
+      // Plus d'infos
+      const details = document.createElement('details');
+      details.className = 'plus-infos';
+      details.open = p.id in detailsOuverts ? detailsOuverts[p.id] : !PETIT_ECRAN.matches;
+      details.addEventListener('toggle', () => { detailsOuverts[p.id] = details.open; });
+      creer('summary', 'Plus d’infos', null, details);
+      ligneInfo(details, 'Famille', famillePoint(p).libelle);
+      ligneInfo(details, 'Type', t.libelle);
       if (reference) {
-        if (p.adresse) ajouter('p', 'Adresse : ' + p.adresse);
-        if (p.fictif) ajouter('p', 'Lieu fictif : nom et emplacement inventés pour la démonstration.', 'a-verifier');
-        else if (p.a_verifier) ajouter('p', 'Position à vérifier.', 'a-verifier');
+        if (p.adresse) ligneInfo(details, 'Adresse', p.adresse);
+        if (!p.fictif && p.a_verifier) creer('p', 'Position à vérifier.', 'a-verifier', details);
       } else {
-        ajouter('p', p.sim != null
-          ? 'Ajouté à ' + heureSimulee(p.sim) + ' (heure simulée)'
-          : 'Ajouté le ' + dateHeure(p.date));
-        if (p.demo) ajouter('p', 'Saisie pendant la démo.', 'gris');
+        ligneInfo(details, 'Ajouté', p.sim != null ? heureSimulee(p.sim) + ' (heure simulée)' : dateHeure(p.date));
+        if (p.demo) creer('p', 'Saisie pendant la démo.', 'gris', details);
       }
-      ajouterSuiviEtHistorique(div, p);
+      ajouterSuiviEtHistorique(details, p);
       const liees = entrees.filter(e => e.lieu === p.id).map(e => '#' + e.n);
-      ajouter('p', 'Entrées liées : ' + (liees.length ? liees.join(', ') : 'aucune'));
-      ajouter('p', 'Point ' + p.id, 'gris');
+      ligneInfo(details, 'Entrées liées', liees.length ? liees.join(', ') : 'aucune');
+      ligneInfo(details, 'Identifiant', p.id, 'gris');
+      div.appendChild(details);
       return div;
     }
 
@@ -1929,7 +1981,6 @@
 
     // Sur téléphone, le zoom et « Recentrer » (44 px) passent au-dessus des fenêtres et cachaient les
     // boutons « Touché »… : comme la légende, on les masque tant qu'une fenêtre est ouverte.
-    const PETIT_ECRAN = window.matchMedia('(max-width: 767px)');
     carte.on('popupopen', () => {
       if (!PETIT_ECRAN.matches) return;
       carte.zoomControl.getContainer().hidden = true;
@@ -2371,8 +2422,8 @@
       // Suivi automatique
       const suivi = el('div', null, 'suivi');
       if (p.station_reference && typeof p.hauteur_critique === 'number') {
-        el('p', 'Suivi automatique : ' + nomStation(p.station_reference), null, suivi);
-        el('p', 'Hauteur critique : ' + metres(p.hauteur_critique) + ' (valeur de démo, non officielle)', null, suivi);
+        ligneInfo(suivi, 'Suivi automatique', nomStation(p.station_reference));
+        ligneInfo(suivi, 'Hauteur critique', metres(p.hauteur_critique) + ' (valeur de démo, non officielle)');
         el('p', texteHauteurActuelle(p), 'hauteur-actuelle', suivi);
         if (statut === 'touche' || statut === 'evacue') {
           el('p', 'Suivi automatique suspendu : décision humaine en cours. « Rétabli » le relance.', 'gris', suivi);
@@ -2383,7 +2434,7 @@
 
       // Historique des états
       const historique = etatDe(p.id).historique;
-      el('p', 'Historique : ' + (historique.length ? '' : 'aucun changement'));
+      ligneInfo(div, 'Historique', historique.length ? '' : 'aucun changement');
       if (historique.length) {
         const liste = el('ol', null, 'historique');
         for (const h of [...historique].reverse().slice(0, 10)) {
