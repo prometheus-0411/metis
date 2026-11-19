@@ -238,11 +238,12 @@
       --mc-bord: #d5dbe3;
       --mc-texte: #1b2430;
       --mc-discret: #5d6b7c;
-      --type-evenement: #b42318;
+      /* Types de la main courante : teintes hors états (rouge, orange, vert, gris, violet sont réservés aux états) */
+      --type-evenement: #be185d;
       --type-decision: #1d4ed8;
-      --type-moyen: #6d28d9;
+      --type-moyen: #0e7490;
       --type-information: #475569;
-      --type-point: #0f766e;
+      --type-point: #4338ca;
     }
     #panneau {
       flex: 1 1 auto;
@@ -320,7 +321,7 @@
       border-radius: 4px;
     }
     #mc-correction button { font: inherit; font-size: 13px; border: none; background: none; color: var(--type-decision); cursor: pointer; text-decoration: underline; padding: 0; }
-    #mc-erreur { font-size: 13px; color: var(--type-evenement); }
+    #mc-erreur { font-size: 13px; color: #b42318; }
     #mc-avertissement { font-size: 13px; color: #8a4b00; padding: 8px 16px; background: #fff4e5; }
     #mc-liste {
       flex: 1 1 auto;
@@ -383,14 +384,14 @@
       width: 100%;
       display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
       padding: 8px;
-      background: #fdecea;
-      border: 1px solid #f3b7b0;
+      background: #f4f6f9;
+      border: 1px solid #1b2430;
       border-radius: 4px;
-      color: #7a1a12;
+      color: #1b2430;
       font-size: 13px;
     }
     #mc-confirmation button { font: inherit; font-size: 13px; padding: 4px 10px; border-radius: 4px; cursor: pointer; }
-    #mc-oui { background: #b42318; color: #fff; border: 1px solid #b42318; }
+    #mc-oui { background: #1b2430; color: #fff; border: 1px solid #1b2430; font-weight: 600; }
     #mc-non { background: #fff; color: var(--mc-texte); border: 1px solid var(--mc-bord); }
     #mc-lieu {
       flex: 1 1 0; min-width: 0;   /* reste sur la ligne du libellé, même avec un nom long */
@@ -422,7 +423,7 @@
       cursor: pointer;
       box-shadow: 0 1px 5px rgba(0,0,0,.3);
     }
-    .ps-bouton.actif { background: var(--orange); }
+    .ps-bouton.actif { background: #1d4ed8; }
     .ps-bouton:focus-visible { outline: 2px solid #1d4ed8; outline-offset: 2px; }
     .ps-aide {
       margin-top: 6px;
@@ -472,23 +473,25 @@
     #ps-annuler { background: #fff; color: #1b2430; border: 1px solid #d5dbe3; }
     #ps-erreur { font-size: 13px; color: #b42318; }
     /* Icône d'un point sensible sur la carte */
+    /* Pastille blanche, icône gris foncé : la famille se lit à l'icône, pas à la couleur.
+       « Référencé » = rond ; « Ajouté en crise » = carré à coins arrondis, bordure foncée. */
     .ps-icone {
       display: flex; align-items: center; justify-content: center;
       width: 30px; height: 30px;
       box-sizing: border-box;
       border-radius: 50%;
-      background: #5d6b7c;           /* remplacé par la couleur de la famille */
-      border: 2px solid #fff;        /* « Référencé » : bordure sobre */
-      box-shadow: 0 0 0 1px rgba(0,0,0,.35), 0 1px 4px rgba(0,0,0,.4);
+      background: #fff;
+      color: #1b2430;
+      border: 1px solid #8a94a3;
+      box-shadow: 0 1px 4px rgba(0,0,0,.35);
       font-size: 15px; line-height: 1;
     }
-    /* « Ajouté en crise » : bordure orange épaisse */
-    .ps-icone.crise { border: 3px solid var(--orange); box-shadow: 0 0 0 1px #fff, 0 1px 4px rgba(0,0,0,.45); }
-    .ps-icone.provisoire { border: 3px dashed var(--orange); opacity: .85; }
+    .ps-icone.crise { border-radius: 6px; border: 2px solid #1b2430; }
+    .ps-icone.provisoire { border-radius: 6px; border: 2px dashed #8a94a3; opacity: .5; }
     /* Statut dans la fenêtre d'un point */
     .statut { display: inline-block; margin: 2px 0 4px; font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 10px; }
     .statut.reference { background: #e8ecf1; color: #1b2430; border: 1px solid #c5ccd6; }
-    .statut.crise { background: #c2410c; color: #fff; }   /* orange foncé : 5,2:1 avec le blanc */
+    .statut.crise { background: #1b2430; color: #fff; border-radius: 4px; }   /* carré foncé, comme la pastille du point */
     .bulle .a-verifier { color: #8a4b00; font-size: 13px; }
     /* État d'un point : anneau extérieur (séparé de la bordure par un liseré blanc) */
     .ps-icone.etat-menace  { box-shadow: 0 0 0 2px #fff, 0 0 0 6px var(--orange), 0 1px 6px rgba(0,0,0,.5); }
@@ -530,10 +533,10 @@
     .historique { margin: 4px 0 0; padding: 0; list-style: none; font-size: 12px; }
     .historique li { padding: 2px 0; border-top: 1px solid #eef1f5; font-variant-numeric: tabular-nums; }
     .historique .origine { color: #5d6b7c; }
-    .mc-marque.auto { background: #fde2e1; color: #8a1c13; }
+    .mc-marque.auto { background: #e2e8f0; color: #334155; }
     /* Légende : exemples de bordure des points */
-    .legende .anneau { width: 12px; height: 12px; border-radius: 50%; background: #5d6b7c; border: 2px solid #fff; box-shadow: 0 0 0 1px rgba(0,0,0,.35); flex: none; box-sizing: border-box; }
-    .legende .anneau.crise { border: 3px solid var(--orange); box-shadow: none; }
+    .legende .anneau { width: 12px; height: 12px; border-radius: 50%; background: #fff; border: 1px solid #8a94a3; flex: none; box-sizing: border-box; }
+    .legende .anneau.crise { border-radius: 3px; border: 2px solid #1b2430; }
     .legende .anneau.etat-menace { box-shadow: 0 0 0 1px #fff, 0 0 0 4px var(--orange); margin: 0 3px; }
     .legende .anneau.etat-touche { box-shadow: 0 0 0 1px #fff, 0 0 0 4px var(--rouge);  margin: 0 3px; }
     .legende .anneau.etat-evacue { box-shadow: 0 0 0 1px #fff, 0 0 0 4px var(--violet); margin: 0 3px; }
@@ -544,8 +547,8 @@
       flex: none;
       font: inherit; font-size: 13px; font-weight: 600;
       padding: 4px 10px;
-      border: 1px solid #f0a35a; border-radius: 4px;
-      background: transparent; color: #ffcc99;
+      border: 1px solid #a5b4fc; border-radius: 4px;
+      background: transparent; color: #e0e7ff;
       cursor: pointer;
     }
     #demo-entrer:disabled { opacity: .6; cursor: wait; }
@@ -557,8 +560,9 @@
       z-index: 2000;
       display: flex; align-items: center; gap: 6px;
       padding: 0 max(12px, env(safe-area-inset-right, 0px)) 0 max(12px, env(safe-area-inset-left, 0px));
-      background: #f57c00;
-      color: #1b1300;
+      /* indigo foncé à fines bandes diagonales : « ceci est un exercice », sans emprunter une couleur d'état */
+      background: repeating-linear-gradient(135deg, #312e81 0 12px, #3c3a96 12px 24px);
+      color: #fff;
       box-shadow: 0 2px 6px rgba(0,0,0,.3);
       white-space: nowrap;
     }
@@ -566,7 +570,7 @@
     .demo-etiquette {
       font-weight: 800; letter-spacing: .08em; font-size: 14px;
       padding: 3px 8px; border-radius: 4px;
-      background: #1b2430; color: #ffb74d;
+      background: #fff; color: #312e81;
     }
     #demo-horloge { font-size: 17px; font-weight: 700; font-variant-numeric: tabular-nums; }
     #demo-phase { font-size: 13px; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
@@ -607,9 +611,9 @@
     .mc-marque {
       font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
       padding: 0 6px; border-radius: 8px;
-      background: #ffe0b2; color: #7a3d00;
+      background: #e0e7ff; color: #312e81;      /* démo : indigo, comme la barre DÉMO */
     }
-    .mc-marque.scenario { background: #e0e7ff; color: #312e81; }
+    .mc-marque.scenario { background: #dbeafe; color: #1e3a8a; }
     .mc-marque.ia { background: #ccfbf1; color: #134e4a; }
 
     /* ---------- Point de situation rédigé par l'IA (étape 8) ---------- */
@@ -667,7 +671,7 @@
         width: auto;
         border-radius: 0;
         box-shadow: none;
-        border-top: 3px solid var(--orange);
+        border-top: 3px solid #1d4ed8;
         border-bottom: 1px solid #d5dbe3;
         padding: 12px 16px;
       }
@@ -1637,11 +1641,10 @@
     // Le HTML ne contient que nos propres emojis et couleurs, jamais le texte saisi.
     function iconePoint(type, statut, etatPoint) {
       const t = PS_TYPES[type] || PS_TYPES.autre;
-      const couleur = type ? PS_FAMILLES[t.famille].couleur : '#ffffff';
       const anneau = ETATS_POINT[etatPoint] && etatPoint !== 'normal' ? ' etat-' + etatPoint : '';
       return L.divIcon({
         className: '',
-        html: '<div class="ps-icone ' + statut + anneau + '" style="background:' + couleur + '">' + (type ? t.icone : '') + '</div>',
+        html: '<div class="ps-icone ' + statut + anneau + '">' + (type ? t.icone : '') + '</div>',
         iconSize: [30, 30],
         iconAnchor: [15, 15],
         popupAnchor: [0, -15]
