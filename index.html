@@ -18,7 +18,7 @@
     //    alerte    : hauteur en mètres à partir de laquelle le marqueur devient ROUGE
     //  En dessous de la vigilance, le marqueur est VERT.
     //  Écrire les nombres avec un POINT (2.50) et non une virgule (2,50).
-    //  Une station absente de cette liste reste grise (« pas de seuil »).
+    //  Une station absente de cette liste reste grise (« Sans seuil » ou « Sans donnée »).
     // =====================================================================
     const SEUILS = {
       'U471001003': { nom: "La Saône à Couzon-au-Mont-d'Or",    vigilance: 2.50, alerte: 3.50 },
@@ -156,7 +156,7 @@
     /* Message d'erreur affiché par-dessus la carte si l'API ne répond pas */
     #message {
       position: absolute;
-      top: 60px; left: 16px; right: 16px;   /* sous le bouton « + Point sensible », pour ne jamais le cacher */
+      top: 60px; left: 16px; right: 16px;   /* sous le bouton « + Ajouter un point », pour ne jamais le cacher */
       max-width: 480px;
       margin: 0 auto;
       padding: 12px 16px;
@@ -470,7 +470,7 @@
       box-sizing: border-box;
       border-radius: 50%;
       background: #5d6b7c;           /* remplacé par la couleur de la famille */
-      border: 2px solid #fff;        /* « Référencé (préparation) » : bordure sobre */
+      border: 2px solid #fff;        /* « Référencé » : bordure sobre */
       box-shadow: 0 0 0 1px rgba(0,0,0,.35), 0 1px 4px rgba(0,0,0,.4);
       font-size: 15px; line-height: 1;
     }
@@ -736,10 +736,10 @@
       <div id="message" hidden></div>
     </div>
 
-    <!-- Création d'un point sensible (s'affiche après un toucher sur la carte) :
+    <!-- Création d'un point « Ajouté en crise » (s'affiche après un toucher sur la carte) :
          posée sur la carte sur ordinateur, juste sous la carte sur téléphone -->
     <form id="ps-formulaire" hidden novalidate>
-        <h3>Nouveau point sensible</h3>
+        <h3>Nouveau point ajouté en crise</h3>
         <input id="ps-nom" type="text" maxlength="120" autocomplete="off"
                aria-label="Nom du point" placeholder="Nom (ex. : Hôpital Édouard-Herriot)">
         <div class="rangee">
@@ -843,7 +843,7 @@
       normal:    { libelle: 'Normal',    couleur: 'var(--vert)',   hexa: '#2e7d32' },
       vigilance: { libelle: 'Vigilance', couleur: 'var(--orange)', hexa: '#ef6c00' },
       alerte:    { libelle: 'Alerte',    couleur: 'var(--rouge)',  hexa: '#c62828' },
-      inconnu:   { libelle: 'Pas de mesure récente', couleur: 'var(--gris)', hexa: '#8a94a3' }
+      inconnu:   { libelle: 'Sans donnée', couleur: 'var(--gris)', hexa: '#8a94a3' }
     };
 
     // Légende des couleurs, en bas à gauche
@@ -868,9 +868,9 @@
         [ETATS.normal.hexa, 'Normal'],
         [ETATS.vigilance.hexa, 'Vigilance'],
         [ETATS.alerte.hexa, 'Alerte'],
-        [ETATS.inconnu.hexa, 'Pas de mesure récente'],
-        ['anneau', 'Point référencé'],
-        ['anneau crise', 'Point ajouté en crise'],
+        [ETATS.inconnu.hexa, 'Sans donnée'],
+        ['anneau', 'Référencé'],
+        ['anneau crise', 'Ajouté en crise'],
         ['anneau etat-menace', 'Menacé (auto)'],
         ['anneau etat-touche', 'Touché'],
         ['anneau etat-evacue', 'Évacué']
@@ -1017,15 +1017,16 @@
         const pastille = document.createElement('span');
         pastille.className = 'pastille';
         pastille.style.background = e.couleur;
-        pastille.textContent = r.etat === 'inconnu' ? (seuils ? 'Mesure ancienne' : 'Pas de seuil') : e.libelle;
+        // même vocabulaire que le bandeau : « Sans donnée » (pas de mesure exploitable) ou « Sans seuil »
+        pastille.textContent = r.etat === 'inconnu' ? (r.recente ? 'Sans seuil' : 'Sans donnée') : e.libelle;
         ligne.appendChild(pastille);
         ajouter('p', texteTendance(r));
         ajouter('p', 'Mesure du ' + heureDeParis(mesure.date_obs) + ' (heure de Paris)');
-        if (!r.recente) ajouter('p', 'Mesure de plus de ' + MESURE_RECENTE_HEURES + ' h : état non évalué.', 'gris');
+        if (!r.recente) ajouter('p', 'Sans donnée : mesure de plus de ' + MESURE_RECENTE_HEURES + ' h, état non évalué.', 'gris');
       } else if (r.erreur) {
-        ajouter('p', 'Hauteur indisponible : le service Hub’Eau n’a pas répondu.', 'gris');
+        ajouter('p', 'Sans donnée : le service Hub’Eau n’a pas répondu.', 'gris');
       } else {
-        ajouter('p', 'Pas de mesure de hauteur sur le dernier mois.', 'gris');
+        ajouter('p', 'Sans donnée : aucune mesure de hauteur sur le dernier mois.', 'gris');
       }
 
       if (seuils) {
@@ -1496,9 +1497,9 @@
     // =====================================================================
     //  POINTS
     //  Deux statuts :
-    //  - « Référencé (préparation) » : chargés depuis referentiel-points.json,
+    //  - « Référencé » : chargés depuis referentiel-points.json,
     //    bordure sobre, aucune entrée en main courante, jamais effacés
-    //  - « Ajouté en crise » : « + Point sensible » puis un toucher sur la carte,
+    //  - « Ajouté en crise » : « + Ajouter un point » puis un toucher sur la carte,
     //    bordure orange, entrée « Information » automatique, effacés par « Réinitialiser (démo) »
     // =====================================================================
     const PS_FAMILLES = {
@@ -1538,7 +1539,7 @@
     let points = [];                       // points ajoutés en crise, du plus ancien au plus récent
     const marqueursPoints = {};            // identifiant du point → son marqueur sur la carte
     const calquePoints = L.layerGroup().addTo(carte);
-    let placementActif = false;            // vrai entre « + Point sensible » et le toucher sur la carte
+    let placementActif = false;            // vrai entre « + Ajouter un point » et le toucher sur la carte
     let positionProvisoire = null;         // endroit touché, en attente du nom
     let marqueurProvisoire = null;
 
@@ -1603,7 +1604,7 @@
         return el;
       };
       ajouter('h3', t.icone + ' ' + p.nom);
-      ajouter('span', reference ? 'Référencé (préparation)' : 'Ajouté en crise', 'statut ' + (reference ? 'reference' : 'crise'));
+      ajouter('span', reference ? 'Référencé' : 'Ajouté en crise', 'statut ' + (reference ? 'reference' : 'crise'));
       const statutActuel = etatDe(p.id).statut;
       ajouter('span', 'État : ' + ETATS_POINT[statutActuel].libelle, 'etat-point ' + statutActuel);
       ajouterBoutonsEtat(div, p);   // en haut de la fenêtre : toujours visibles, même sur téléphone
@@ -1636,7 +1637,7 @@
           title: p.nom,
           zIndexOffset: reference ? 400 : 500   // les points ajoutés en crise passent au-dessus
         })
-          // contenu recalculé à chaque ouverture ; la fenêtre s'ouvre sous le bouton « + Point sensible »
+          // contenu recalculé à chaque ouverture ; la fenêtre s'ouvre sous le bouton « + Ajouter un point »
           // hauteur maximale de la fenêtre adaptée à la carte (petite sur téléphone), le reste défile
           .bindPopup(() => bullePoint(p), { maxHeight: Math.max(200, Math.min(380, carte.getSize().y - 130)), autoPanPaddingTopLeft: L.point(10, 70), autoPanPaddingBottomRight: L.point(10, 10) })
           .addTo(calquePoints);
@@ -1651,7 +1652,7 @@
       mc.lieu.textContent = '';
       const total = tousPoints().length;
       mc.lieu.add(new Option(total ? '— Aucun (optionnel) —' : '— Aucun point —', ''));
-      const groupes = [['Points référencés', referentiel], ['Ajoutés en crise', points]];
+      const groupes = [['Référencés', referentiel], ['Ajoutés en crise', points]];
       for (const [titre, liste] of groupes) {
         if (!liste.length) continue;
         const groupe = document.createElement('optgroup');
@@ -1729,7 +1730,7 @@
       tenterCadrageInitial();
     }
 
-    // Bouton « + Point sensible », en haut à droite de la carte
+    // Bouton « + Ajouter un point », en haut à droite de la carte
     let boutonPoint, aidePoint;
     const controlePoint = L.control({ position: 'topright' });
     controlePoint.onAdd = function () {
@@ -1737,7 +1738,7 @@
       boutonPoint = document.createElement('button');
       boutonPoint.type = 'button';
       boutonPoint.className = 'ps-bouton';
-      boutonPoint.textContent = '+ Point sensible';
+      boutonPoint.textContent = '+ Ajouter un point';
       boutonPoint.setAttribute('aria-pressed', 'false');
       aidePoint = document.createElement('div');
       aidePoint.className = 'ps-aide';
@@ -1765,7 +1766,7 @@
       placementActif = false;
       if (!boutonPoint) return;
       boutonPoint.classList.remove('actif');
-      boutonPoint.textContent = '+ Point sensible';
+      boutonPoint.textContent = '+ Ajouter un point';
       boutonPoint.setAttribute('aria-pressed', 'false');
       aidePoint.hidden = true;
       ps.zone.classList.remove('placement');
@@ -1853,7 +1854,7 @@
       ecrirePoints();
       annulerCreation();
       afficherPoints();
-      ajouterEntree({ type: 'information', texte: 'Point sensible ajouté : ' + nom, lieu: point.id });
+      ajouterEntree({ type: 'information', texte: 'Point ajouté en crise : ' + nom, lieu: point.id });
       marqueursPoints[point.id].openPopup();
     });
 
@@ -1980,7 +1981,7 @@
 
     function texteHauteurActuelle(p) {
       const h = hauteurStation(p.station_reference);
-      return 'Hauteur actuelle : ' + (h == null ? 'pas de mesure récente' : metres(h));
+      return 'Hauteur actuelle : ' + (h == null ? 'sans donnée' : metres(h));
     }
 
     // Petit outil : crée un élément texte dans un parent
@@ -2577,7 +2578,7 @@
         if (!derniersResultats.length) return ['- Non disponible : aucune donnée de station chargée (service Hub’Eau injoignable).'];
         for (const r of derniersResultats) {
           const nom = r.station.libelle_station || r.station.code_station;
-          if (!r.mesure) { l.push('- ' + nom + ' : pas de mesure disponible.'); continue; }
+          if (!r.mesure) { l.push('- ' + nom + ' : sans donnée (aucune mesure disponible).'); continue; }
           const h = r.mesure.resultat_obs / 1000;
           const ageMin = Math.round((Date.now() - new Date(r.mesure.date_obs).getTime()) / 60000);
           const t = r.precedente ? tendance(h, r.precedente.resultat_obs / 1000) : 'tendance non disponible';
@@ -2604,7 +2605,7 @@
             const h = hauteurStation(p.station_reference);
             suivis.push('- ' + p.nom + ' [' + type + '] : normal ; menacé si ' + nomStation(p.station_reference)
               + ' atteint ' + m2(p.hauteur_critique) + ' (hauteur critique de démo)'
-              + (h == null ? ', hauteur actuelle non disponible' : ', hauteur actuelle ' + m2(h)));
+              + (h == null ? ', hauteur actuelle : sans donnée' : ', hauteur actuelle ' + m2(h)));
           }
         }
         return {
