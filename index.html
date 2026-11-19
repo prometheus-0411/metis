@@ -554,6 +554,20 @@
     .ps-icone.etat-menace::after { content: '!'; background: #c2410c; }
     .ps-icone.etat-touche::after { content: '✕'; background: #c62828; }
     .ps-icone.etat-evacue::after { content: '↗\FE0E'; background: #7b1fa2; }
+    /* Pastille « N nouvelles entrées ↓ » : en bas au centre (centre du panneau sur ordinateur) */
+    #nouvelles {
+      position: fixed; z-index: 1500;
+      left: 50%; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%);
+      min-height: 44px; padding: 0 20px; border: none; border-radius: 22px;
+      font: inherit; font-size: 15px; font-weight: 700;
+      background: #1d4ed8; color: #fff; cursor: pointer;
+      box-shadow: 0 3px 12px rgba(0,0,0,.35); white-space: nowrap;
+    }
+    #nouvelles:focus-visible { outline: 3px solid #8ab4ff; outline-offset: 2px; }
+    @media (min-width: 768px) { #nouvelles { left: 80%; } }   /* panneau = 40 % de droite */
+    .mc-entree.surligne { box-shadow: 0 0 0 3px #1d4ed8; }
+    @media (prefers-reduced-motion: no-preference) { .mc-entree { transition: box-shadow .3s; } }
+
     /* Message « <Nom> : évacué · Annuler » (5 s) en bas de la carte, au-dessus des contrôles */
     #annulation {
       position: absolute; z-index: 1100;
@@ -838,6 +852,8 @@
     </div>
   </header>
   <div id="synthese-details" hidden role="region" aria-label="Synthèse détaillée"></div>
+  <!-- Entrées arrivées sans être tapées (scénario, alerte auto) et hors de vue -->
+  <button type="button" id="nouvelles" hidden aria-live="polite"></button>
   <!-- Bandeau du mode démo : horloge simulée et commandes de lecture -->
   <div id="demo-barre" hidden role="region" aria-label="Mode démo">
     <span class="demo-temps">
@@ -1075,6 +1091,7 @@
       fenetreOuverte = false;
       if (messageMasqueParFenetre) { message.hidden = false; messageMasqueParFenetre = false; }
     });
+    carte.on('popupopen popupclose', () => { if (typeof majPastille === 'function') majPastille(); });
 
     // ---------- Stations hydrométriques (API Hub'Eau Hydrométrie v2) ----------
     // Doc : https://hubeau.eaufrance.fr/page/api-hydrometrie
@@ -1482,7 +1499,8 @@
       for (const e of [...entrees].reverse()) {
         const type = MC_TYPES[e.type] || MC_TYPES.information;
         const li = document.createElement('li');
-        li.className = 'mc-entree';
+        li.className = 'mc-entree' + (surlignees.has(e.n) ? ' surligne' : '');
+        li.dataset.n = e.n;
         li.style.setProperty('--couleur-type', type.couleur);
 
         const entete = document.createElement('div');
@@ -1574,7 +1592,45 @@
         }
         mc.liste.appendChild(li);
       }
+      observerNouvelles();
     }
+
+    // ---------- Signal « nouvelles entrées » ----------
+    // Entrées arrivées sans être tapées (scénario, alerte auto) : tant qu'elles sont hors de vue,
+    // une pastille « N nouvelles entrées ↓ » le dit. Un toucher y mène et les surligne 2 s.
+    const nonVues = new Set();       // numéros des entrées pas encore vues
+    const surlignees = new Set();    // numéros surlignés en ce moment
+    const pastilleNouvelles = document.getElementById('nouvelles');
+    let observateur = null;
+    function observerNouvelles() {
+      if (observateur) observateur.disconnect();
+      if (!nonVues.size || !window.IntersectionObserver) { majPastille(); return; }
+      const haut = Math.ceil(parseFloat(getComputedStyle(document.body).getPropertyValue('--entete')) || 0);
+      // une entrée sous le bandeau fixe n'est pas « vue » ; la coupure par le panneau qui défile est prise en compte
+      observateur = new IntersectionObserver(vus => {
+        for (const v of vus) if (v.isIntersecting) nonVues.delete(Number(v.target.dataset.n));
+        majPastille();
+      }, { rootMargin: '-' + haut + 'px 0px 0px 0px', threshold: 0.5 });
+      for (const li of mc.liste.querySelectorAll('.mc-entree')) if (nonVues.has(Number(li.dataset.n))) observateur.observe(li);
+      majPastille();
+    }
+    function majPastille() {
+      const n = nonVues.size;
+      pastilleNouvelles.hidden = n === 0 || fenetreOuverte;   // jamais par-dessus une fenêtre de point
+      pastilleNouvelles.textContent = n + (n > 1 ? ' nouvelles entrées' : ' nouvelle entrée') + ' ↓';
+    }
+    pastilleNouvelles.addEventListener('click', () => {
+      const nums = [...nonVues];
+      const plusRecente = mc.liste.querySelector('.mc-entree[data-n="' + Math.max(...nums) + '"]');
+      for (const n of nums) surlignees.add(n);
+      for (const li of mc.liste.querySelectorAll('.mc-entree')) if (surlignees.has(Number(li.dataset.n))) li.classList.add('surligne');
+      if (plusRecente) plusRecente.scrollIntoView({ block: 'start', behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+      setTimeout(() => {
+        for (const n of nums) surlignees.delete(n);
+        for (const li of mc.liste.querySelectorAll('.surligne')) if (!surlignees.has(Number(li.dataset.n))) li.classList.remove('surligne');
+      }, 2000);
+    });
+    function oublierNouvelles() { nonVues.clear(); surlignees.clear(); majPastille(); }
 
     function commencerCorrection(n) {
       annulerCorrection();
@@ -1662,8 +1718,10 @@
       }
       entrees.push(Object.freeze(entree));
       ecrireStockage();
+      // Arrivée sans être tapée (scénario, alerte auto) : signalée si elle est hors de vue ;
+      // seules les saisies de l'utilisateur font remonter le panneau en haut.
+      if (scenario || auto) nonVues.add(entree.n); else mc.liste.scrollTop = 0;
       afficherEntrees();
-      mc.liste.scrollTop = 0;
       // Si la fenêtre du lieu est ouverte sur la carte, on la met à jour (liste des entrées liées)
       const m = lieu && marqueursPoints[lieu];
       if (m && m.isPopupOpen()) m.getPopup().update();
@@ -1692,6 +1750,7 @@
     document.getElementById('mc-non').addEventListener('click', () => { mc.confirmation.hidden = true; });
     document.getElementById('mc-oui').addEventListener('click', () => {
       validerAttente();
+      oublierNouvelles();
       entrees = [];
       points = [];
       etatsPoints = {};
@@ -2652,6 +2711,7 @@
     // Nouvelle lecture : horloge à J+0, main courante et points de la démo remis à zéro
     function nouvelleLecture() {
       validerAttente();                      // un statut en attente est écrit avant la remise à zéro
+      oublierNouvelles();
       try { localStorage.removeItem(DEMO_MC_CLE); } catch (e) { /* rien à faire */ }
       try { localStorage.removeItem(DEMO_PS_CLE); } catch (e) { /* rien à faire */ }
       try { localStorage.removeItem(DEMO_ETATS_CLE); } catch (e) { /* rien à faire */ }
@@ -2695,6 +2755,7 @@
 
     function quitterDemo() {
       validerAttente();                      // écrit dans la main courante de démo, avant de la quitter
+      oublierNouvelles();
       clearInterval(minuteurDemo);
       minuteurDemo = null;
       enLecture = false;
