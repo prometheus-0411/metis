@@ -401,7 +401,7 @@
       background: #fff; color: var(--mc-texte);
     }
     #mc-lieu:disabled { color: var(--mc-discret); background: var(--mc-fond); }
-    /* Lien « 📍 nom du lieu » dans une entrée de la main courante */
+    /* Lien « épingle + nom du lieu » dans une entrée de la main courante */
     .mc-entree .mc-lieu {
       display: inline-flex; align-items: center; gap: 4px;
       margin: 6px 0 0;
@@ -628,7 +628,13 @@
     #demo-quitter { margin-left: auto; }
     /* Boutons de la barre démo : icône + libellé (côte à côte sur ordinateur, empilés sur téléphone) */
     #demo-lecture, #demo-vitesse, #demo-recommencer { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
-    .demo-icone { font-size: 15px; }
+    .demo-icone { font-size: 15px; display: inline-flex; }
+    .ico { flex: none; display: block; }
+    #actualiser { display: inline-flex; align-items: center; gap: 6px; }
+    .act-icone { display: inline-flex; }
+    .titre-point { display: flex; align-items: center; gap: 6px; }
+    .titre-point .ico { color: #1b2430; }
+    .mc-type .ico, .mc-lieu .ico { width: 14px; height: 14px; }
     .demo-libelle { font-size: 13px; }
     .lib-court { display: none; }
     @media (max-width: 767px) {
@@ -744,7 +750,7 @@
       #mc-ajouter, #ps-creer, #ps-annuler, #mc-oui, #mc-non { min-height: 44px; }
       #mc-correction button { min-height: 44px; padding: 0 8px; }
       #mc-reinit { min-height: 44px; padding: 0 8px; }
-      /* Entrées : « Corriger » et 📍 gardent leur dessin, leur zone de toucher passe à 44 px.
+      /* Entrées : « Corriger » et le lien de lieu gardent leur dessin, leur zone de toucher passe à 44 px.
          Plus d'air entre et dans les entrées, pour garder 8 px entre deux zones voisines. */
       #mc-liste { gap: 16px; }
       .mc-entree { padding: 10px 12px; }
@@ -763,7 +769,7 @@
   <header id="bandeau">
     <div class="ligne-titre">
       <span class="titre">Métis — Lyon</span>
-      <button type="button" id="actualiser" title="Recharger maintenant les hauteurs d’eau (Hub’Eau)">↻ Actualiser</button>
+      <button type="button" id="actualiser" title="Recharger maintenant les hauteurs d’eau (Hub’Eau)"><span class="act-icone" aria-hidden="true"></span><span class="act-libelle">Actualiser</span></button>
       <button type="button" id="demo-entrer">Mode démo</button>
     </div>
     <!-- Synthèse : où on en est, y compris ce qu'on ne sait pas (le plus grave d'abord) -->
@@ -780,9 +786,9 @@
     </span>
     <span id="demo-phase"></span>
     <!-- Icône + libellé visible (le libellé sert aussi de nom pour les lecteurs d'écran) -->
-    <button type="button" class="demo-btn" id="demo-lecture"><span class="demo-icone" aria-hidden="true">⏸</span><span class="demo-libelle">Pause</span></button>
+    <button type="button" class="demo-btn" id="demo-lecture"><span class="demo-icone" aria-hidden="true"></span><span class="demo-libelle">Pause</span></button>
     <button type="button" class="demo-btn" id="demo-vitesse" title="Changer la vitesse"><span class="demo-icone">×1</span><span class="demo-libelle">Vitesse</span></button>
-    <button type="button" class="demo-btn" id="demo-recommencer" title="Recommencer la démo depuis le début"><span class="demo-icone" aria-hidden="true">⟲</span><span class="demo-libelle"><span class="lib-long">Recommencer</span><span class="lib-court">Rejouer</span></span></button>
+    <button type="button" class="demo-btn" id="demo-recommencer" title="Recommencer la démo depuis le début"><span class="demo-icone" aria-hidden="true"></span><span class="demo-libelle"><span class="lib-long">Recommencer</span><span class="lib-court">Rejouer</span></span></button>
     <button type="button" class="demo-btn" id="demo-quitter" aria-label="Quitter la démo"><span class="texte-long">Quitter la démo</span><span class="texte-court">Quitter</span></button>
   </div>
   <div id="espace">
@@ -878,6 +884,53 @@
   </div>
 
   <script>
+    // =====================================================================
+    //  ICÔNES (SVG au trait, écrites dans le code : aucune ressource externe)
+    //  Style et tracés repris de Lucide (https://lucide.dev, licence ISC) : grille 24 × 24,
+    //  trait de 2, sans remplissage, couleur du texte (currentColor).
+    //  « hopital », « pont » et « route » sont dessinées pour Métis dans le même style.
+    // =====================================================================
+    const ICONES = {
+      // Types de points
+      flamme: '<path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>',
+      bouclier: '<path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/>',
+      colonnes: '<path d="M3 22h18"/><path d="M6 18v-7"/><path d="M10 18v-7"/><path d="M14 18v-7"/><path d="M18 18v-7"/><path d="M12 2 20 7H4z"/>',
+      immeuble: '<rect width="16" height="20" x="4" y="2" rx="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01"/><path d="M16 6h.01"/><path d="M12 6h.01"/><path d="M12 10h.01"/><path d="M12 14h.01"/><path d="M16 10h.01"/><path d="M16 14h.01"/><path d="M8 10h.01"/><path d="M8 14h.01"/>',
+      hopital: '<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M12 7v10"/><path d="M7 12h10"/>',
+      ecole: '<path d="M14 22v-4a2 2 0 1 0-4 0v4"/><path d="m18 10 3.447 1.724a1 1 0 0 1 .553.894V20a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-7.382a1 1 0 0 1 .553-.894L6 10"/><path d="M18 5v17"/><path d="m4 6 7.106-3.553a2 2 0 0 1 1.788 0L20 6"/><path d="M6 5v17"/><circle cx="12" cy="9" r="2"/>',
+      fauteuil: '<path d="M19 9V6a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v3"/><path d="M3 16a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-5a2 2 0 0 0-4 0v1.5a.5.5 0 0 1-.5.5h-9a.5.5 0 0 1-.5-.5V11a2 2 0 0 0-4 0z"/><path d="M5 18v2"/><path d="M19 18v2"/>',
+      pont: '<path d="M2 8h20"/><path d="M4 8v12"/><path d="M20 8v12"/><path d="M4 18a8 8 0 0 1 16 0"/><path d="M12 8v2"/>',
+      train: '<path d="M8 3.1V7a4 4 0 0 0 8 0V3.1"/><path d="m9 15-1-1"/><path d="m15 15 1-1"/><path d="M9 19c-2.8 0-5-2.2-5-5v-4a8 8 0 0 1 16 0v4c0 2.8-2.2 5-5 5Z"/><path d="m8 19-2 3"/><path d="m16 19 2 3"/>',
+      route: '<path d="M4 21 9 3"/><path d="M20 21 15 3"/><path d="M12 5v2"/><path d="M12 11v2"/><path d="M12 17v3"/>',
+      eclair: '<path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"/>',
+      goutte: '<path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"/>',
+      usine: '<path d="M2 20a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8l-7 5V8l-7 5V4a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M17 18h1"/><path d="M12 18h1"/><path d="M7 18h1"/>',
+      epingle: '<path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/>',
+      // Types d'entrées de la main courante
+      triangle: '<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
+      coche: '<path d="M20 6 9 17l-5-5"/>',
+      camion: '<path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/>',
+      info: '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>',
+      pressePapiers: '<rect width="8" height="4" x="8" y="2" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/>',
+      // Commandes
+      pause: '<rect x="14" y="4" width="4" height="16" rx="1"/><rect x="6" y="4" width="4" height="16" rx="1"/>',
+      lecture: '<path d="M6 3 20 12 6 21z"/>',
+      recommencer: '<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>',
+      actualiser: '<path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/>'
+    };
+    // Balise <svg> complète (décorative : aria-hidden). nom : clé de ICONES ; taille en px.
+    function svg(nom, taille) {
+      const t = taille || 16;
+      return '<svg class="ico" width="' + t + '" height="' + t + '" viewBox="0 0 24 24" fill="none" stroke="currentColor"'
+        + ' stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">'
+        + (ICONES[nom] || ICONES.epingle) + '</svg>';
+    }
+
+    // Icônes des boutons fixes (Actualiser, barre démo)
+    document.querySelector('#actualiser .act-icone').innerHTML = svg('actualiser', 16);
+    document.querySelector('#demo-lecture .demo-icone').innerHTML = svg('pause', 18);
+    document.querySelector('#demo-recommencer .demo-icone').innerHTML = svg('recommencer', 18);
+
     // Vrai pendant le mode démo (déclaré ici : le chargement des stations le consulte)
     let modeDemo = false;
 
@@ -1275,12 +1328,13 @@
     const cleEtats = () => (modeDemo ? DEMO_ETATS_CLE : ETATS_CLE);
 
     const MC_TYPES = {
-      evenement:   { libelle: 'Événement',    icone: '⚠', couleur: 'var(--type-evenement)' },
-      decision:    { libelle: 'Décision',     icone: '✔', couleur: 'var(--type-decision)' },
-      moyen:       { libelle: 'Moyen engagé', icone: '⛟', couleur: 'var(--type-moyen)' },
-      information: { libelle: 'Information',  icone: 'ℹ', couleur: 'var(--type-information)' },
+      // icone : clé de ICONES (SVG)
+      evenement:   { libelle: 'Événement',    icone: 'triangle', couleur: 'var(--type-evenement)' },
+      decision:    { libelle: 'Décision',     icone: 'coche',    couleur: 'var(--type-decision)' },
+      moyen:       { libelle: 'Moyen engagé', icone: 'camion',   couleur: 'var(--type-moyen)' },
+      information: { libelle: 'Information',  icone: 'info',     couleur: 'var(--type-information)' },
       // Point de situation validé (étape 8) : n'apparaît pas dans le menu, seulement via la validation humaine
-      point:       { libelle: 'Point de situation', icone: '📋', couleur: 'var(--type-point)' }
+      point:       { libelle: 'Point de situation', icone: 'pressePapiers', couleur: 'var(--type-point)' }
     };
 
     const mc = {
@@ -1382,7 +1436,8 @@
         numero.textContent = '#' + e.n;
         const badge = document.createElement('span');
         badge.className = 'mc-type';
-        badge.textContent = type.icone + ' ' + type.libelle;
+        badge.innerHTML = svg(type.icone, 14);              // icône : constante du code, jamais du texte saisi
+        badge.appendChild(document.createTextNode(type.libelle));
         const heure = document.createElement('time');
         heure.className = 'mc-heure';
         heure.dateTime = e.date;
@@ -1432,12 +1487,15 @@
           li.appendChild(source);
         }
 
-        // Lieu lié : « 📍 nom », qu'on touche pour voir le point sur la carte
+        // Lieu lié : « épingle + nom », qu'on touche pour voir le point sur la carte
         if (e.lieu) {
           const p = trouverPoint(e.lieu);
           const lieu = document.createElement(p ? 'button' : 'span');
           lieu.className = 'mc-lieu';
-          lieu.textContent = '📍 ' + (p ? p.nom : 'lieu inconnu');
+          lieu.innerHTML = svg('epingle', 14);
+          const nomLieu = document.createElement('span');
+          nomLieu.textContent = p ? p.nom : 'lieu inconnu';   // nom saisi : toujours en textContent
+          lieu.appendChild(nomLieu);
           if (p) {
             lieu.type = 'button';
             lieu.title = 'Voir ce lieu sur la carte';
@@ -1616,20 +1674,21 @@
     // Les clés « hopital », « ecole », « poste » et « autre » sont celles de l'étape 5 :
     // les points déjà enregistrés gardent donc leur type.
     const PS_TYPES = {
-      caserne:    { libelle: 'Caserne de pompiers',          icone: '🚒', famille: 'gestion' },
-      police:     { libelle: 'Commissariat / gendarmerie',   icone: '🚓', famille: 'gestion' },
-      mairie:     { libelle: 'Mairie',                       icone: '🏛️', famille: 'gestion' },
-      prefecture: { libelle: 'Préfecture',                   icone: '🏢', famille: 'gestion' },
-      hopital:    { libelle: 'Hôpital',                      icone: '🏥', famille: 'evacuation' },
-      ecole:      { libelle: 'École / crèche',               icone: '🏫', famille: 'evacuation' },
-      retraite:   { libelle: 'Maison de retraite',           icone: '🧓', famille: 'evacuation' },
-      pont:       { libelle: 'Pont',                         icone: '🌉', famille: 'reseaux' },
-      gare:       { libelle: 'Gare',                         icone: '🚉', famille: 'reseaux' },
-      route:      { libelle: 'Axe routier',                  icone: '🛣️', famille: 'reseaux' },
-      poste:      { libelle: 'Poste électrique',             icone: '⚡', famille: 'aggravant' },
-      eau:        { libelle: 'Eau potable',                  icone: '💧', famille: 'aggravant' },
-      industriel: { libelle: 'Site industriel',              icone: '🏭', famille: 'aggravant' },
-      autre:      { libelle: 'Autre',                        icone: '📌', famille: 'autre' }
+      // icone : clé de ICONES (SVG au trait)
+      caserne:    { libelle: 'Caserne de pompiers',          icone: 'flamme',   famille: 'gestion' },
+      police:     { libelle: 'Commissariat / gendarmerie',   icone: 'bouclier', famille: 'gestion' },
+      mairie:     { libelle: 'Mairie',                       icone: 'colonnes', famille: 'gestion' },
+      prefecture: { libelle: 'Préfecture',                   icone: 'immeuble', famille: 'gestion' },
+      hopital:    { libelle: 'Hôpital',                      icone: 'hopital',  famille: 'evacuation' },
+      ecole:      { libelle: 'École / crèche',               icone: 'ecole',    famille: 'evacuation' },
+      retraite:   { libelle: 'Maison de retraite',           icone: 'fauteuil', famille: 'evacuation' },
+      pont:       { libelle: 'Pont',                         icone: 'pont',     famille: 'reseaux' },
+      gare:       { libelle: 'Gare',                         icone: 'train',    famille: 'reseaux' },
+      route:      { libelle: 'Axe routier',                  icone: 'route',    famille: 'reseaux' },
+      poste:      { libelle: 'Poste électrique',             icone: 'eclair',   famille: 'aggravant' },
+      eau:        { libelle: 'Eau potable',                  icone: 'goutte',   famille: 'aggravant' },
+      industriel: { libelle: 'Site industriel',              icone: 'usine',    famille: 'aggravant' },
+      autre:      { libelle: 'Autre',                        icone: 'epingle',  famille: 'autre' }
     };
     const ps = {
       zone: document.getElementById('zone-carte'),
@@ -1657,7 +1716,7 @@
       const groupe = document.createElement('optgroup');
       groupe.label = famille.libelle;
       for (const [cle, t] of Object.entries(PS_TYPES)) {
-        if (t.famille === cleFamille) groupe.appendChild(new Option(t.icone + ' ' + t.libelle, cle));
+        if (t.famille === cleFamille) groupe.appendChild(new Option(t.libelle, cle));
       }
       ps.type.appendChild(groupe);
     }
@@ -1686,7 +1745,7 @@
       const anneau = ETATS_POINT[etatPoint] && etatPoint !== 'normal' ? ' etat-' + etatPoint : '';
       return L.divIcon({
         className: '',
-        html: '<div class="ps-icone ' + statut + anneau + '">' + (type ? t.icone : '') + '</div>',
+        html: '<div class="ps-icone ' + statut + anneau + '">' + (type ? svg(t.icone, 18) : '') + '</div>',
         iconSize: [30, 30],
         iconAnchor: [15, 15],
         popupAnchor: [0, -15]
@@ -1706,7 +1765,12 @@
         div.appendChild(el);
         return el;
       };
-      ajouter('h3', t.icone + ' ' + p.nom);
+      const titre = ajouter('h3', '');
+      titre.className = 'titre-point';
+      titre.innerHTML = svg(t.icone, 18);
+      const nomPoint = document.createElement('span');
+      nomPoint.textContent = p.nom;
+      titre.appendChild(nomPoint);
       ajouter('span', reference ? 'Référencé' : 'Ajouté en crise', 'statut ' + (reference ? 'reference' : 'crise'));
       const statutActuel = etatDe(p.id).statut;
       ajouter('span', 'État : ' + ETATS_POINT[statutActuel].libelle, 'etat-point ' + statutActuel);
@@ -1760,7 +1824,7 @@
         if (!liste.length) continue;
         const groupe = document.createElement('optgroup');
         groupe.label = titre;
-        for (const p of liste) groupe.appendChild(new Option(typePoint(p).icone + ' ' + p.nom, p.id));
+        for (const p of liste) groupe.appendChild(new Option(p.nom, p.id));
         mc.lieu.appendChild(groupe);
       }
       mc.lieu.value = trouverPoint(choix) ? choix : '';
@@ -2333,7 +2397,7 @@
       const fini = tSim >= dureeMinutes();
       demo.horloge.textContent = heureSimulee(tSim);
       demo.phase.textContent = fini ? 'Fin du scénario' : phaseActuelle();
-      demo.lecture.querySelector('.demo-icone').textContent = enLecture ? '⏸' : '▶';
+      demo.lecture.querySelector('.demo-icone').innerHTML = svg(enLecture ? 'pause' : 'lecture', 18);
       demo.lecture.querySelector('.demo-libelle').textContent = enLecture ? 'Pause' : (fini ? 'Rejouer' : 'Lecture');
       demo.vitesse.querySelector('.demo-icone').textContent = LIBELLES_VITESSE[iVitesse];
     }
@@ -2593,7 +2657,7 @@
       const el = elementsSynthese();
       const signature = JSON.stringify(el.map(e => [e.texte, e.classe])) + '|' + synthese.ligne.clientWidth;
       boutonActualiser.disabled = chargement.enCours;
-      boutonActualiser.textContent = chargement.enCours ? 'Actualisation…' : '↻ Actualiser';
+      boutonActualiser.querySelector('.act-libelle').textContent = chargement.enCours ? 'Actualisation…' : 'Actualiser';
       if (signature === signatureSynthese) return;   // rien n'a changé (la démo appelle 4 fois par seconde)
       signatureSynthese = signature;
 
