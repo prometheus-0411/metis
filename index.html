@@ -1191,6 +1191,43 @@
       .voir-point { margin: var(--esp-3) 0; }
     }
     #mc-pied { background: var(--fond); border-top: 1px solid var(--bord); }
+
+    /* =====================================================================
+       PASTILLE « NOUVELLES ENTRÉES » ET STATION HORS CHAMP (session UX 3)
+       ===================================================================== */
+    #nouvelles, #nouvelles[hidden] { left: 50%; }
+    #nouvelles {
+      display: inline-flex; align-items: center; gap: var(--esp-2);
+      height: 44px; min-height: 44px; padding: 0 var(--esp-4) 0 var(--esp-2); border-radius: 22px;
+      background: var(--encre); color: #fff; font-size: var(--txt-sm); font-weight: 600;
+      box-shadow: var(--ombre-2);
+    }
+    #nouvelles[hidden] { display: none; }
+    @media (min-width: 768px) { #nouvelles { left: 30%; } }
+    .nv-nombre {
+      min-width: 28px; height: 28px; padding: 0 var(--esp-2); box-sizing: border-box; border-radius: 14px;
+      display: inline-flex; align-items: center; justify-content: center;
+      background: var(--bronze); color: var(--nuit); font-family: var(--police-mono); font-size: var(--txt-xs); font-weight: 700;
+    }
+    #nouvelles svg { flex: none; }
+    #hors-champ {
+      position: absolute; z-index: 800; top: var(--esp-3); left: 64px; right: 10px; width: fit-content; max-width: none;
+      box-sizing: border-box; margin: 0 auto;
+      display: inline-flex; align-items: center; gap: var(--esp-2);
+      height: 36px; padding: 0 var(--esp-3) 0 var(--esp-2); border-radius: 18px;
+      background: #fff; color: var(--encre); border: 1px solid var(--bord); box-shadow: var(--ombre-1);
+      font-size: var(--txt-sm); font-weight: 500; white-space: nowrap; cursor: pointer;
+    }
+    #hors-champ[hidden] { display: none; }
+    #hors-champ::after { content: ''; position: absolute; left: 0; right: 0; top: -4px; bottom: -4px; }
+    #hors-champ:focus-visible { outline: 2px solid #1D4ED8; outline-offset: 2px; }
+    .hc-fleche { display: inline-flex; flex: none; color: var(--texte-2); }
+    #hors-champ .st-icone { flex: none; width: 22px; height: 22px; font-size: var(--txt-xs); border-width: 1.5px; box-shadow: none; }
+    .hc-nom { font-weight: 600; overflow: hidden; text-overflow: ellipsis; min-width: 0; flex: 0 1 auto; }
+    .hc-ou { flex: none; color: var(--texte-2); }
+    .hc-plus { flex: none; margin-left: var(--esp-1); padding: 0 var(--esp-2); line-height: 22px; border-radius: 11px; background: var(--fond); color: var(--texte-2); font-size: var(--txt-xs); }
+    /* Téléphone : sous les boutons du haut de la carte (zoom à gauche, « Ajouter un point » à droite) */
+    @media (max-width: 767px) { #hors-champ { top: 64px; } .hc-hors { display: none; } }
     /* Un champ qui reçoit le clavier ne s'arrête jamais sous le bandeau */
     input, select, textarea { scroll-margin-top: calc(var(--entete) + 16px); }
   </style>
@@ -1227,7 +1264,7 @@
   </div>
   <div id="espace">
     <div id="zone-carte">
-      <div id="carte"></div>
+      <div id="carte"><button type="button" id="hors-champ" class="leaflet-control" hidden></button></div>
       <div id="message" hidden></div>
       <!-- Statut humain qui vient d'être touché : 5 s pour l'annuler avant qu'il soit écrit -->
       <div id="annulation" hidden role="status" aria-live="polite">
@@ -2001,9 +2038,68 @@
       return (fin >= 0 ? suite.slice(0, fin) : suite).map(l => l.replace(/^\s*[-–•]\s*/, '')).join(' ').replace(/\s+/g, ' ').trim() || String(texte).slice(0, 200);
     }
 
+    // ---------- Station hors champ ----------
+    // Une station en vigilance ou en alerte sortie de la vue : une puce en haut de la carte le dit,
+    // avec sa direction et sa distance (à vol d'oiseau depuis le centre de la vue). Un toucher y centre la carte.
+    const horsChamp = document.getElementById('hors-champ');
+    L.DomEvent.disableClickPropagation(horsChamp);
+    L.DomEvent.disableScrollPropagation(horsChamp);
+    const DIRECTIONS = ['au nord', 'au nord-est', 'à l’est', 'au sud-est', 'au sud', 'au sud-ouest', 'à l’ouest', 'au nord-ouest'];
+    let cibleHorsChamp = null;
+    function stationsSurveillees() {
+      if (modeDemo && scenario) return scenario.stations.map(st => ({ nom: st.nom, lat: st.lat, lng: st.lng, etat: etatSimule(st, hauteurSimulee(st, tSim)) }));
+      return derniersResultats.map(r => ({ nom: r.station.libelle_station || r.station.code_station, lat: r.station.latitude_station, lng: r.station.longitude_station, etat: r.etat }));
+    }
+    function majHorsChamp() {
+      if (!horsChamp) return;
+      const vue = carte.getBounds(), centre = carte.getCenter();
+      const dehors = stationsSurveillees()
+        .filter(st => (st.etat === 'alerte' || st.etat === 'vigilance') && !vue.contains([st.lat, st.lng]))
+        .map(st => ({ ...st, km: carte.distance(centre, [st.lat, st.lng]) / 1000 }))
+        .sort((a, b) => (a.etat === b.etat ? a.km - b.km : a.etat === 'alerte' ? -1 : 1));
+      if (!dehors.length || fenetreOuverte) { horsChamp.hidden = true; cibleHorsChamp = null; return; }
+      const st = dehors[0];
+      cibleHorsChamp = [st.lat, st.lng];
+      // cap depuis le centre : 0° = nord, sens des aiguilles d'une montre
+      const dx = (st.lng - centre.lng) * Math.cos(centre.lat * Math.PI / 180), dy = st.lat - centre.lat;
+      const cap = (Math.atan2(dx, dy) * 180 / Math.PI + 360) % 360;
+      const direction = DIRECTIONS[Math.round(cap / 45) % 8];
+      const km = st.km < 10 ? st.km.toFixed(1).replace('.', ',') : String(Math.round(st.km));
+      const cle = JSON.stringify([st.nom, st.etat, km, direction, Math.round(cap), dehors.length]);
+      horsChamp.hidden = false;
+      // Entre les boutons du haut de la carte : zoom à gauche, « Ajouter un point » à droite (s'il est sur la même ligne)
+      const zc = carte.getContainer().getBoundingClientRect();
+      const ajout = document.querySelector('.ps-bouton');
+      const ra = ajout && ajout.getBoundingClientRect();
+      const hautPuce = PETIT_ECRAN.matches ? 64 : 12;
+      const memeLigne = ra && ra.width && ra.bottom - zc.top > hautPuce && ra.top - zc.top < hautPuce + 36;
+      const droite = memeLigne ? Math.round(zc.right - ra.left + 8) : 10;
+      horsChamp.style.right = droite + 'px';
+      horsChamp.style.maxWidth = Math.max(120, Math.round(zc.width) - 64 - droite) + 'px';
+      if (horsChamp.dataset.cle === cle) return;
+      horsChamp.dataset.cle = cle;
+      horsChamp.innerHTML = '<span class="hc-fleche" style="transform: rotate(' + Math.round(cap) + 'deg)">' + svg('flecheHaut', 16) + '</span>'
+        + '<span class="st-icone st-' + st.etat + '"><span aria-hidden="true">' + SYMBOLES_STATION[st.etat] + '</span></span>';
+      creer('span', st.nom, 'hc-nom', horsChamp);                         // nom venu de l'API : textContent
+      const ou = creer('span', ' · ', 'hc-ou', horsChamp);
+      creer('span', 'hors champ, ', 'hc-hors', ou);
+      ou.appendChild(document.createTextNode(km + ' km ' + direction));
+      if (dehors.length > 1) creer('span', '+' + (dehors.length - 1), 'hc-plus mono', horsChamp);
+      horsChamp.setAttribute('aria-label', (st.etat === 'alerte' ? 'Station en alerte' : 'Station en vigilance') + ' hors de la vue : '
+        + st.nom + ', ' + km + ' km ' + direction + (dehors.length > 1 ? ', et ' + (dehors.length - 1) + ' autre(s)' : '') + '. Centrer la carte dessus.');
+    }
+    horsChamp.addEventListener('click', () => { if (cibleHorsChamp) carte.panTo(cibleHorsChamp); });
+    carte.on('moveend zoomend popupopen popupclose', () => majHorsChamp());
+
     // ---------- Signal « nouvelles entrées » ----------
     // Entrées arrivées sans être tapées (scénario, alerte auto) : tant qu'elles sont hors de vue,
     // une pastille « N nouvelles entrées ↓ » le dit. Un toucher y mène et les surligne 2 s.
+    // Hauteur des bandeaux fixes du haut (--entete est un calc() en démo : on le mesure avec une sonde)
+    const sondeEntete = document.createElement('div');
+    sondeEntete.style.cssText = 'position:absolute;visibility:hidden;pointer-events:none;top:0;left:0;width:1px;height:var(--entete)';
+    sondeEntete.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(sondeEntete);
+    const hauteurEntete = () => sondeEntete.offsetHeight;
     const nonVues = new Set();       // numéros des entrées pas encore vues
     const surlignees = new Set();    // numéros surlignés en ce moment
     const pastilleNouvelles = document.getElementById('nouvelles');
@@ -2011,7 +2107,7 @@
     function observerNouvelles() {
       if (observateur) observateur.disconnect();
       if (!nonVues.size || !window.IntersectionObserver) { majPastille(); return; }
-      const haut = Math.ceil(parseFloat(getComputedStyle(document.body).getPropertyValue('--entete')) || 0);
+      const haut = hauteurEntete();
       // une entrée sous le bandeau fixe n'est pas « vue » ; la coupure par le panneau qui défile est prise en compte
       observateur = new IntersectionObserver(vus => {
         for (const v of vus) if (v.isIntersecting) nonVues.delete(Number(v.target.dataset.n));
@@ -2020,11 +2116,49 @@
       for (const li of mc.liste.querySelectorAll('.mc-entree')) if (nonVues.has(Number(li.dataset.n))) observateur.observe(li);
       majPastille();
     }
+    // Saisie en cours dans le formulaire de la main courante : la pastille s'efface
+    let saisieMC = false;
+    mc.formulaire.addEventListener('focusin', () => { saisieMC = true; majPastille(); });
+    mc.formulaire.addEventListener('focusout', () => { setTimeout(() => { saisieMC = mc.formulaire.contains(document.activeElement); majPastille(); }, 0); });
+    let dernierNombre = -1;
     function majPastille() {
       const n = nonVues.size;
-      pastilleNouvelles.hidden = n === 0 || fenetreOuverte;   // jamais par-dessus une fenêtre de point
-      pastilleNouvelles.textContent = n + (n > 1 ? ' nouvelles entrées' : ' nouvelle entrée') + ' ↓';
+      if (n !== dernierNombre) {
+        dernierNombre = n;
+        pastilleNouvelles.innerHTML = '';
+        creer('span', String(n), 'nv-nombre', pastilleNouvelles);
+        creer('span', n > 1 ? ' nouvelles entrées' : ' nouvelle entrée', 'nv-libelle', pastilleNouvelles);
+        pastilleNouvelles.insertAdjacentHTML('beforeend', svg('flecheBas', 16));
+      }
+      // jamais par-dessus une fenêtre de point, ni pendant la saisie
+      if (n === 0 || fenetreOuverte || saisieMC) { pastilleNouvelles.hidden = true; return; }
+      pastilleNouvelles.hidden = false;
+      placerPastille();
     }
+    // Au-dessus de la carte, centrée en bas de sa partie visible ; si la carte est sortie de l'écran
+    // (téléphone, liste défilée), en bas de l'écran. Masquée si elle recouvrirait le formulaire.
+    function placerPastille() {
+      if (pastilleNouvelles.hidden && (nonVues.size === 0 || fenetreOuverte || saisieMC)) return;
+      const c = document.getElementById('carte').getBoundingClientRect();
+      const haut = hauteurEntete();
+      const carteVisible = Math.min(c.bottom, innerHeight) - Math.max(c.top, haut) > 120;
+      const bas = carteVisible ? innerHeight - Math.min(c.bottom, innerHeight) + 32 : 16;
+      pastilleNouvelles.style.left = (carteVisible ? c.left + c.width / 2 : innerWidth / 2) + 'px';
+      pastilleNouvelles.style.bottom = 'calc(' + bas + 'px + ' + (carteVisible && c.bottom < innerHeight ? '0px' : 'env(safe-area-inset-bottom, 0px)') + ')';
+      pastilleNouvelles.hidden = false;
+      // Pas par-dessus la légende repliée (en bas à gauche de la carte) : on remonte au-dessus d'elle
+      const lg = legende.getContainer(), rl = lg.getBoundingClientRect(), r0 = pastilleNouvelles.getBoundingClientRect();
+      if (!lg.hidden && rl.width && r0.left < rl.right && r0.right > rl.left && r0.bottom > rl.top && r0.top < rl.bottom)
+        pastilleNouvelles.style.bottom = Math.round(innerHeight - rl.top + 8) + 'px';
+      const p = pastilleNouvelles.getBoundingClientRect(), f = mc.formulaire.getBoundingClientRect();
+      if (p.bottom > f.top && p.top < f.bottom && p.right > f.left && p.left < f.right) pastilleNouvelles.hidden = true;
+    }
+    let placementPrevu = false;
+    const prevoirPlacement = () => { if (placementPrevu) return; placementPrevu = true; requestAnimationFrame(() => { placementPrevu = false; if (nonVues.size) majPastille(); }); };
+    window.addEventListener('scroll', prevoirPlacement, { passive: true });
+    window.addEventListener('resize', prevoirPlacement);
+    document.addEventListener('click', () => { prevoirPlacement(); if (typeof majHorsChamp === 'function') setTimeout(majHorsChamp, 0); });   // légende dépliée, mode placement…
+    document.getElementById('panneau').addEventListener('scroll', prevoirPlacement, { passive: true });
     pastilleNouvelles.addEventListener('click', () => {
       const nums = [...nonVues];
       const plusRecente = mc.liste.querySelector('.mc-entree[data-n="' + Math.max(...nums) + '"]');
@@ -3401,6 +3535,7 @@
       boutonActualiser.disabled = chargement.enCours;
       boutonActualiser.querySelector('.act-libelle').textContent = chargement.enCours ? 'Actualisation…' : 'Actualiser';
       etiquetteSimulees.hidden = !modeDemo;
+      majHorsChamp();
       if (signature === signatureSynthese) return;   // rien n'a changé (la démo appelle 4 fois par seconde)
       signatureSynthese = signature;
 
