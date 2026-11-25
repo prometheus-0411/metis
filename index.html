@@ -31,6 +31,10 @@
       // V301502301 ruisseau de Charbonnières, V301502401 ruisseau du Ratier.
     };
 
+    // Fond de carte CARTO Positron : mettre ici une clé CARTO (https://carto.com/basemaps) pour l'utiliser.
+    // Vide : fond OpenStreetMap désaturé.
+    const CARTO_CLE = '';
+
     // Une mesure plus ancienne que ce délai est considérée comme « pas récente » (marqueur gris)
     const MESURE_RECENTE_HEURES = 24;
     // Tendance : on compare la dernière hauteur à celle d'il y a 3 heures
@@ -279,6 +283,16 @@
     .recentrer-bouton:hover { background: #f4f6f9; }
     .recentrer-bouton:focus-visible { outline: 2px solid #1d4ed8; outline-offset: 2px; }
     @media (pointer: coarse) { .recentrer-bouton { height: 44px; padding: 0 var(--esp-3); font-size: var(--txt-sm); } }
+
+    /* Fond de carte OSM désaturé : seuls les états restent en couleur vive */
+    #carte.fond-osm .leaflet-tile-pane { filter: grayscale(1) brightness(1.06) contrast(0.88); }
+    /* Attribution : toujours visible, discrète, coin bas-droit */
+    .leaflet-container .leaflet-control-attribution {
+      font-size: var(--txt-xs); line-height: 1.4; color: var(--discret);
+      background: rgba(255,255,255,.85); padding: 0 var(--esp-2); border-radius: var(--r-s) 0 0 0;
+    }
+    .leaflet-container .leaflet-control-attribution a { color: var(--discret); text-decoration: none; }
+    .leaflet-container .leaflet-control-attribution a:hover { text-decoration: underline; }
 
     /* Un élément marqué « hidden » reste caché, même s'il a une mise en forme flex */
     [hidden] { display: none !important; }
@@ -1056,12 +1070,27 @@
     // (sur téléphone, le zoom entier inférieur faisait se recouvrir les icônes du centre de Lyon)
     const carte = L.map('carte', { zoomSnap: 0.25 }).setView([45.764, 4.836], 12);
 
-    // Fond OpenStreetMap, avec l'attribution obligatoire
-    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19,
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">les contributeurs d’OpenStreetMap</a>'
-        + ' · Hauteurs d’eau : <a href="https://hubeau.eaufrance.fr/page/api-hydrometrie">Hub’Eau</a>'
-    }).addTo(carte);
+    // ---------- Fond de carte ----------
+    // CARTO_CLE vide : tuiles OpenStreetMap, désaturées par un filtre CSS (seulement le calque des tuiles :
+    // marqueurs, stations et fenêtres gardent leurs couleurs). Remplie : tuiles CARTO « light_all »
+    // (Positron), sans filtre, au format du README officiel CartoDB/basemap-styles :
+    // https://{s}.basemaps.cartocdn.com/{style}/{z}/{x}/{y}{scale}.png?key=…  (sous-domaines a, b, c, d ; @2x en haute résolution)
+    const LIEN_OSM = '<a href="https://www.openstreetmap.org/copyright">© OpenStreetMap</a>';
+    const LIEN_HUBEAU = '<a href="https://hubeau.eaufrance.fr/page/api-hydrometrie">Hub’Eau</a>';
+    if (CARTO_CLE) {
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}' + (L.Browser.retina ? '@2x.png' : '.png')
+        + '?key=' + encodeURIComponent(CARTO_CLE), {
+        subdomains: 'abcd', maxZoom: 20,
+        attribution: LIEN_OSM + ' <a href="https://carto.com/attributions">© CARTO</a> · ' + LIEN_HUBEAU
+      }).addTo(carte);
+    } else {
+      document.getElementById('carte').classList.add('fond-osm');   // active le filtre de désaturation
+      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: LIEN_OSM + ' · ' + LIEN_HUBEAU
+      }).addTo(carte);
+    }
+    carte.attributionControl.setPrefix(false);
 
     // Calque dédié aux stations, AU-DESSUS des points (marqueurs à 600, fenêtres à 700)
     carte.createPane('stations').style.zIndex = 640;
