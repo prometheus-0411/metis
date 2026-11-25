@@ -1053,6 +1053,61 @@
     .legende .ps-icone.etat-evacue { box-shadow: 0 0 0 2px #fff, 0 0 0 4px #7B1FA2; }
     .legende .ps-icone.etat-menace::after, .legende .ps-icone.etat-touche::after, .legende .ps-icone.etat-evacue::after { top: -8px; right: -9px; width: 16px; height: 16px; line-height: 13px; }
     .legende .st-icone { width: 18px; height: 18px; border-width: 1px; box-shadow: none; }
+
+    /* =====================================================================
+       FENÊTRES ET MESSAGE « ANNULER » (session UX 3)
+       ===================================================================== */
+    .leaflet-popup-content-wrapper { border-radius: var(--r-l); box-shadow: var(--ombre-2); }
+    .leaflet-popup-tip { box-shadow: var(--ombre-1); }
+    .leaflet-popup-content { margin: var(--esp-4); font-size: var(--txt-sm); line-height: 1.45; color: var(--encre); }
+    @media (pointer: coarse) { .leaflet-popup-content { margin-right: 40px; } }
+    .entete-point { display: flex; gap: var(--esp-3); align-items: flex-start; }
+    .icone-type { flex: none; width: 36px; height: 36px; border-radius: var(--r-m); background: var(--fond); color: var(--encre); display: flex; align-items: center; justify-content: center; }
+    .entete-textes { min-width: 0; display: flex; flex-direction: column; gap: var(--esp-1); }
+    .bulle h3.titre-point { margin: 0; font-size: var(--txt-lg); font-weight: 700; line-height: 1.25; color: var(--encre); }
+    .badges-point { margin: 0; gap: var(--esp-1); }
+    .badges-point .statut, .statut.reference, .statut.crise { background: var(--fond); color: var(--texte-2); border: none; border-radius: var(--r-s); font-weight: 600; }
+    .etat-point { display: inline-flex; align-items: center; gap: var(--esp-1); border-radius: var(--r-s); font-weight: 700; }
+    .etat-point.normal { background: var(--fond); color: var(--texte-2); border: none; }
+    .etat-point.menace { background: #EF6C00; color: #1C1917; }
+    .etat-point.touche { background: #C62828; color: #fff; }
+    .etat-point.evacue { background: #7B1FA2; color: #fff; }
+    .etat-sym { font-weight: 800; }
+    .depuis { font: 500 var(--txt-xs)/1.4 var(--police-mono); color: var(--discret); }
+    .boutons-etat { gap: var(--esp-2); margin: var(--esp-3) 0 var(--esp-1); }
+    .boutons-etat button { min-height: 44px; border-radius: var(--r-m); border: 1.5px solid currentColor; font-size: var(--txt-sm); font-weight: 600; background: #fff; }
+    .boutons-etat .b-retabli { color: var(--encre); }
+    /* statut en cours : bouton plein (fond de sa couleur, texte blanc), même s'il est désactivé */
+    .boutons-etat button[aria-pressed="true"], .boutons-etat button[aria-pressed="true"]:disabled { opacity: 1; background: currentColor; }
+    .boutons-etat button[aria-pressed="true"] span { color: #fff; }
+    .plus-infos { margin-top: var(--esp-2); border-top: 1px solid var(--bord); padding-top: 0; }
+    .plus-infos summary, .plus-infos summary { min-height: 44px; justify-content: space-between; font-size: var(--txt-sm); font-weight: 600; color: var(--texte-2); }
+    .plus-infos summary::before { content: none; }
+    .plus-infos summary .ico { color: var(--discret); transition: transform .15s; }
+    .plus-infos[open] summary .ico { transform: rotate(180deg); }
+    .bulle .suivi { background: var(--fond); border-radius: var(--r-m); }
+    /* Message « Annuler » */
+    #annulation {
+      display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; column-gap: var(--esp-3);
+      padding: var(--esp-3) var(--esp-3) var(--esp-3) var(--esp-4); overflow: hidden;
+      background: var(--encre); color: #fff; border-radius: var(--r-l);
+      box-shadow: 0 16px 40px rgba(2,6,23,.45), 0 2px 8px rgba(2,6,23,.3);
+      width: min(420px, calc(100% - 24px));
+    }
+    #annulation[hidden] { display: none !important; }
+    .ann-sym { width: 24px; height: 24px; font-size: var(--txt-sm); }
+    .ann-textes { display: flex; flex-direction: column; min-width: 0; }
+    .ann-statut { font-size: var(--txt-md); font-weight: 700; }
+    #annulation-texte { display: flex; min-width: 0; font-size: var(--txt-sm); color: #CBD5E1; white-space: nowrap; }
+    .ann-nom { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+    .ann-delai { flex: none; font-family: var(--police-mono); font-size: var(--txt-xs); line-height: 20px; }
+    #annulation-bouton { background: #fff; color: var(--encre); border-radius: var(--r-m); min-height: 44px; }
+    .ann-barre { position: absolute; left: 0; bottom: 0; height: 3px; width: 100%; transform-origin: left; background: #CBD5E1; }
+    #annulation[data-action="touche"] .ann-barre { background: #FCA5A5; }
+    #annulation[data-action="evacue"] .ann-barre { background: #D8B4FE; }
+    #annulation[data-action="retabli"] .ann-barre { background: #86EFAC; }
+    .ann-barre.en-cours { animation: barre-annulation 5s linear forwards; }
+    @keyframes barre-annulation { from { transform: scaleX(1); } to { transform: scaleX(0); } }
     /* Un champ qui reçoit le clavier ne s'arrête jamais sous le bandeau */
     input, select, textarea { scroll-margin-top: calc(var(--entete) + 16px); }
   </style>
@@ -1093,8 +1148,10 @@
       <div id="message" hidden></div>
       <!-- Statut humain qui vient d'être touché : 5 s pour l'annuler avant qu'il soit écrit -->
       <div id="annulation" hidden role="status" aria-live="polite">
-        <span id="annulation-texte"></span>
+        <span class="ann-sym sym" aria-hidden="true"></span>
+        <span class="ann-textes"><strong class="ann-statut"></strong><span id="annulation-texte"></span></span>
         <button type="button" id="annulation-bouton">Annuler</button>
+        <span class="ann-barre" aria-hidden="true"></span>
       </div>
     </div>
 
@@ -2159,21 +2216,34 @@
       const reference = p.statut === 'reference';
       const div = document.createElement('div');
       div.className = 'bulle bulle-point';
-      // Titre : icône + nom
+      // En-tête : icône du type dans un carré de 36 px, nom, badges, « depuis … »
+      const entete = document.createElement('div');
+      entete.className = 'entete-point';
+      const carre = document.createElement('span');
+      carre.className = 'icone-type';
+      carre.innerHTML = svg(t.icone, 20);
+      const bloc = document.createElement('div');
+      bloc.className = 'entete-textes';
       const titre = document.createElement('h3');
       titre.className = 'titre-point';
-      titre.innerHTML = svg(t.icone, 18);
       const nomPoint = document.createElement('span');
       nomPoint.textContent = p.nom;
       titre.appendChild(nomPoint);
-      div.appendChild(titre);
-      // Badges
+      bloc.appendChild(titre);
       const badges = document.createElement('div');
       badges.className = 'badges-point';
       creer('span', reference ? 'Référencé' : 'Ajouté en crise', 'statut ' + (reference ? 'reference' : 'crise'), badges);
-      const statutActuel = etatDe(p.id).statut;
-      creer('span', 'État : ' + ETATS_POINT[statutActuel].libelle, 'etat-point ' + statutActuel, badges);
-      div.appendChild(badges);
+      const etatCourant = etatDe(p.id);
+      const statutActuel = etatCourant.statut;
+      const badgeEtat = creer('span', null, 'etat-point ' + statutActuel, badges);
+      const SYM_ETAT = { menace: '!', touche: '✕', evacue: '↗\uFE0E' };
+      if (SYM_ETAT[statutActuel]) creer('span', SYM_ETAT[statutActuel], 'etat-sym', badgeEtat).setAttribute('aria-hidden', 'true');
+      badgeEtat.appendChild(document.createTextNode('État : ' + ETATS_POINT[statutActuel].libelle));
+      bloc.appendChild(badges);
+      const derniere = etatCourant.historique[etatCourant.historique.length - 1];
+      if (derniere) creer('div', 'depuis ' + (derniere.sim != null ? heureSimulee(derniere.sim) : dateHeure(derniere.date)), 'depuis', bloc);
+      entete.append(carre, bloc);
+      div.appendChild(entete);
       // Boutons (et lien « Annuler ce statut »)
       ajouterBoutonsEtat(div, p);
       if (p.fictif) creer('p', 'Lieu fictif : nom et emplacement inventés pour la démonstration.', 'a-verifier', div);
@@ -2182,7 +2252,8 @@
       details.className = 'plus-infos';
       details.open = p.id in detailsOuverts ? detailsOuverts[p.id] : !PETIT_ECRAN.matches;
       details.addEventListener('toggle', () => { detailsOuverts[p.id] = details.open; });
-      creer('summary', 'Plus d’infos', null, details);
+      const resume = creer('summary', null, null, details);
+      resume.innerHTML = '<span>Plus d’infos · suivi, historique, entrées liées</span>' + svg('chevron', 18);
       ligneInfo(details, 'Famille', famillePoint(p).libelle);
       ligneInfo(details, 'Type', t.libelle);
       if (reference) {
@@ -2565,6 +2636,8 @@
 
     function statutHumain(p, action) {
       if (attente && attente.p.id !== p.id) validerAttente();      // un autre point : on écrit le précédent
+      // « Rétabli » sur le point en attente (Touché / Évacué il y a moins de 5 s) = « Annuler » : état d'avant, rien d'écrit
+      if (attente && attente.p.id === p.id && action === 'retabli') { annulerAttente(); return; }
       let avant, statutAvant;
       if (attente) {                                              // même point : le nouveau toucher remplace
         clearTimeout(attente.minuteur);
@@ -2585,9 +2658,36 @@
         sim: modeDemo ? Math.floor(tSim) : null,
         minuteur: setTimeout(validerAttente, DELAI_ANNULATION)
       };
-      annulation.texte.textContent = p.nom + ' : ' + ACTIONS[action].toLowerCase();   // nom : textContent
-      annulation.boite.hidden = false;
+      afficherAnnulation(p, action);
       majPoint(p);
+    }
+
+    // Message « Annuler » : symbole de l'état, statut en gras, nom + « écrit dans N s », barre qui se vide
+    const SYM_ANNULATION = { touche: ['p-touche', '✕'], evacue: ['p-evacue', '↗︎'], retabli: ['s-normal', '✓'] };
+    let decompte = null;
+    function afficherAnnulation(p, action) {
+      const boite = annulation.boite;
+      const [cls, car] = SYM_ANNULATION[action];
+      const sym = boite.querySelector('.ann-sym');
+      sym.className = 'ann-sym sym ' + cls;
+      sym.textContent = car;
+      boite.dataset.action = action;
+      boite.querySelector('.ann-statut').textContent = ACTIONS[action];
+      annulation.texte.textContent = '';
+      const nom = document.createElement('span');
+      nom.className = 'ann-nom';
+      nom.textContent = p.nom;                                     // nom : toujours en textContent
+      const delai = document.createElement('span');
+      delai.className = 'ann-delai';
+      annulation.texte.append(nom, delai);
+      const fin = Date.now() + DELAI_ANNULATION;
+      const maj = () => { delai.textContent = ' · écrit dans ' + Math.max(0, Math.ceil((fin - Date.now()) / 1000)) + ' s'; };
+      maj();
+      clearInterval(decompte);
+      decompte = setInterval(maj, 1000);
+      const barre = boite.querySelector('.ann-barre');
+      barre.classList.remove('en-cours'); void barre.offsetWidth; barre.classList.add('en-cours');   // relance la barre
+      boite.hidden = false;
     }
 
     // Écrit le statut en attente : ligne d'historique + entrée de main courante, à l'heure du toucher
@@ -2596,6 +2696,7 @@
       const a = attente;
       attente = null;
       clearTimeout(a.minuteur);
+      clearInterval(decompte);
       annulation.boite.hidden = true;
       if (!a.action) return;
       const entree = ajouterEntree({
@@ -2616,6 +2717,7 @@
       const a = attente;
       attente = null;
       clearTimeout(a.minuteur);
+      clearInterval(decompte);
       annulation.boite.hidden = true;
       if (a.avant) etatsPoints[a.p.id] = a.avant; else delete etatsPoints[a.p.id];
       ecrireEtats();
