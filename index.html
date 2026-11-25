@@ -1013,6 +1013,46 @@
     .leg-types { display: inline-flex; gap: var(--esp-2); color: var(--texte-2); }
     .leg-type { display: inline-flex; }
     @media (pointer: coarse) { .legende-bouton, .ps-bouton { min-height: 44px; } }
+
+    /* =====================================================================
+       MARQUEURS (session UX 3)
+       Points : pastille blanche 30 px, icône --encre ; état = anneau de 3,5 px à 4,5 px du bord
+       + pastille de symbole de 18 px. Stations : rond de 24 px. Symboles foncés sur l'orange.
+       ===================================================================== */
+    .ps-icone {
+      width: 30px; height: 30px; background: #fff; color: var(--encre);
+      border: 1px solid #94A3B8; box-shadow: 0 1px 3px rgba(15,23,42,.28);
+    }
+    .ps-icone .ico { width: 18px; height: 18px; }
+    .ps-icone.crise { border-radius: 7px; border: 2px solid var(--encre); }
+    .ps-icone.provisoire { border-radius: 7px; border: 2px dashed #94A3B8; opacity: .5; }
+    .ps-icone.etat-menace { box-shadow: 0 0 0 4.5px rgba(255,255,255,.92), 0 0 0 8px #EF6C00, 0 1px 3px rgba(15,23,42,.28); }
+    .ps-icone.etat-touche { box-shadow: 0 0 0 4.5px rgba(255,255,255,.92), 0 0 0 8px #C62828, 0 1px 3px rgba(15,23,42,.28); }
+    .ps-icone.etat-evacue { box-shadow: 0 0 0 4.5px rgba(255,255,255,.92), 0 0 0 8px #7B1FA2, 0 1px 3px rgba(15,23,42,.28); }
+    @media (prefers-reduced-motion: no-preference) {
+      .ps-icone.etat-menace { animation: pulsation-menace 1.6s ease-in-out infinite; }
+      @keyframes pulsation-menace {
+        50% { box-shadow: 0 0 0 4.5px rgba(255,255,255,.92), 0 0 0 8px #EF6C00, 0 0 0 12px rgba(239,108,0,.35), 0 1px 3px rgba(15,23,42,.28); }
+      }
+    }
+    .ps-icone.etat-menace::after, .ps-icone.etat-touche::after, .ps-icone.etat-evacue::after {
+      top: -10px; right: -10px; width: 18px; height: 18px; border: 1.5px solid #fff;
+      font: 800 var(--txt-xs)/15px var(--police);
+    }
+    .ps-icone.etat-menace::after { background: #EF6C00; color: #1C1917; }
+    .ps-icone.etat-touche::after { background: #C62828; color: #fff; }
+    .ps-icone.etat-evacue::after { background: #7B1FA2; color: #fff; }
+    .st-icone { width: 24px; height: 24px; border: 2px solid #fff; box-shadow: 0 1px 3px rgba(15,23,42,.28); font-family: var(--police); }
+    .st-vigilance { background: #EF6C00; color: #1C1917; }
+    .st-inconnu { background: #64748B; border: 2px dashed #fff; }
+    .st-sansSeuil { background: #64748B; }
+    /* légende : mêmes formes, en plus petit */
+    .legende .ps-icone { width: 18px; height: 18px; box-shadow: none; animation: none; }
+    .legende .ps-icone.etat-menace { box-shadow: 0 0 0 2px #fff, 0 0 0 4px #EF6C00; }
+    .legende .ps-icone.etat-touche { box-shadow: 0 0 0 2px #fff, 0 0 0 4px #C62828; }
+    .legende .ps-icone.etat-evacue { box-shadow: 0 0 0 2px #fff, 0 0 0 4px #7B1FA2; }
+    .legende .ps-icone.etat-menace::after, .legende .ps-icone.etat-touche::after, .legende .ps-icone.etat-evacue::after { top: -8px; right: -9px; width: 16px; height: 16px; line-height: 13px; }
+    .legende .st-icone { width: 18px; height: 18px; border-width: 1px; box-shadow: none; }
     /* Un champ qui reçoit le clavier ne s'arrête jamais sous le bandeau */
     input, select, textarea { scroll-margin-top: calc(var(--entete) + 16px); }
   </style>
