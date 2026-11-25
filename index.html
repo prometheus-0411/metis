@@ -1086,7 +1086,13 @@
     .boutons-etat button[aria-pressed="true"], .boutons-etat button[aria-pressed="true"]:disabled { opacity: 1; background: currentColor; }
     .boutons-etat button[aria-pressed="true"] span { color: #fff; }
     .plus-infos { margin-top: var(--esp-2); border-top: 1px solid var(--bord); padding-top: 0; }
-    .plus-infos summary, .plus-infos summary { min-height: 44px; justify-content: space-between; font-size: var(--txt-sm); font-weight: 600; color: var(--texte-2); }
+    .plus-infos summary { min-height: 44px; justify-content: space-between; font-size: var(--txt-sm); font-weight: 600; color: var(--texte-2); list-style: none; }
+    /* Croix de fermeture : même dessin partout (souris : 32 px ; tactile : 44 px, règle plus haut) */
+    @media (pointer: fine) {
+      .leaflet-container a.leaflet-popup-close-button { width: 32px; height: 32px; top: 4px; right: 4px; font: 400 var(--txt-xl)/32px var(--police); color: var(--discret); border-radius: var(--r-m); }
+      .leaflet-container a.leaflet-popup-close-button:hover { background: var(--fond); color: var(--encre); }
+    }
+    .plus-infos summary::before, .plus-infos[open] summary::before { content: none; }   /* l’ancien triangle : le chevron dessiné le remplace */
     .plus-infos summary::before { content: none; }
     .plus-infos summary .ico { color: var(--discret); transition: transform .15s; }
     .plus-infos[open] summary .ico { transform: rotate(180deg); }
@@ -1219,7 +1225,7 @@
       font-size: var(--txt-sm); font-weight: 500; white-space: nowrap; cursor: pointer;
     }
     #hors-champ[hidden] { display: none; }
-    #hors-champ::after { content: ''; position: absolute; left: 0; right: 0; top: -4px; bottom: -4px; }
+    #hors-champ::after { content: ''; position: absolute; left: 0; right: 0; top: -5px; bottom: -5px; }
     #hors-champ:focus-visible { outline: 2px solid #1D4ED8; outline-offset: 2px; }
     .hc-fleche { display: inline-flex; flex: none; color: var(--texte-2); }
     #hors-champ .st-icone { flex: none; width: 22px; height: 22px; font-size: var(--txt-xs); border-width: 1.5px; box-shadow: none; }
