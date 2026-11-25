@@ -905,6 +905,11 @@
       display: inline-flex; align-items: center; gap: var(--esp-2);
     }
     #actualiser:hover, #demo-entrer:hover { background: #1E293B; }
+    /* Téléphone : « Actualiser » en icône seule (le libellé reste lu par les lecteurs d'écran) pour ne pas couper « Lyon » */
+    @media (max-width: 767px) {
+      #actualiser { width: 44px; padding: 0; justify-content: center; }
+      #actualiser .act-libelle { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+    }
     .etiquette-simulees {
       font-size: var(--txt-xs); font-weight: 600; color: #A5B4FC; letter-spacing: .04em;
       border: 1px solid #4338CA; border-radius: var(--r-s); padding: var(--esp-1) var(--esp-2);
@@ -1108,6 +1113,84 @@
     #annulation[data-action="retabli"] .ann-barre { background: #86EFAC; }
     .ann-barre.en-cours { animation: barre-annulation 5s linear forwards; }
     @keyframes barre-annulation { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+
+    /* =====================================================================
+       MAIN COURANTE (session UX 3)
+       ===================================================================== */
+    #panneau { background: var(--fond); }
+    .mc-tete { display: flex; align-items: center; gap: var(--esp-3); padding: var(--esp-4) var(--esp-4) var(--esp-2); }
+    .mc-tete h2 { margin: 0; font-size: var(--txt-lg); font-weight: 700; color: var(--encre); display: flex; align-items: baseline; gap: var(--esp-2); }
+    #mc-compte { font-size: var(--txt-sm); color: var(--discret); font-weight: 500; }
+    #sit-generer, #sit .rangee #sit-generer {
+      margin-left: auto; display: inline-flex; align-items: center; gap: var(--esp-2);
+      min-height: 36px; padding: 0 var(--esp-3); border-radius: var(--r-m);
+      background: #fff; color: #0F766E; border: 1.5px solid #0F766E; font-size: var(--txt-sm); font-weight: 600;
+    }
+    @media (pointer: coarse) { #sit-generer { min-height: 44px; } }
+    #sit { margin: 0 var(--esp-4) var(--esp-3); border: 1px solid var(--bord); border-radius: var(--r-l); }
+    #mc-formulaire {
+      margin: 0 var(--esp-4) var(--esp-3); padding: var(--esp-4);
+      background: var(--surface); border: 1px solid var(--bord); border-radius: var(--r-l); box-shadow: var(--ombre-1);
+      gap: var(--esp-3);
+    }
+    .mc-champs { display: grid; grid-template-columns: 1fr 1fr; gap: var(--esp-3); }
+    .champ { display: flex; flex-direction: column; gap: var(--esp-1); min-width: 0; }
+    #mc-formulaire label, #mc-formulaire .mc-libelle-champ { font-size: var(--txt-sm); font-weight: 600; color: var(--texte-2); margin: 0; }
+    #mc-type, #mc-lieu {
+      -webkit-appearance: none; appearance: none; width: 100%; min-width: 0; box-sizing: border-box;
+      height: 44px; padding: 0 36px 0 var(--esp-3); border: 1px solid #CBD5E1; border-radius: var(--r-m);
+      background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23475569' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 12px center;
+      font-size: var(--txt-md); color: var(--encre); text-overflow: ellipsis;
+    }
+    #mc-lieu:disabled { background-color: var(--fond); color: var(--discret); }
+    #mc-texte { border: 1px solid #CBD5E1; border-radius: var(--r-m); padding: var(--esp-2) var(--esp-3); min-height: 72px; font-size: var(--txt-md); }
+    #mc-type:focus-visible, #mc-lieu:focus-visible, #mc-texte:focus-visible { outline: 2px solid #1D4ED8; outline-offset: 1px; border-color: #1D4ED8; }
+    #mc-ajouter { width: 100%; min-height: 44px; border-radius: var(--r-m); background: var(--encre); color: #fff; font-size: var(--txt-md); font-weight: 600; }
+    #mc-ajouter:hover { background: #1E293B; }
+    #mc-correction { border-radius: var(--r-m); }
+    #mc-liste { padding: var(--esp-1) var(--esp-4) var(--esp-4); gap: var(--esp-3); }
+    .mc-entree {
+      background: var(--surface); border: 1px solid var(--bord); border-left: 1px solid var(--bord);
+      border-radius: 12px; padding: var(--esp-3) var(--esp-4); box-shadow: 0 1px 2px rgba(15,23,42,.05);
+    }
+    .mc-entete { gap: var(--esp-2); }
+    .mc-numero { font-size: var(--txt-xs); color: var(--discret); font-weight: 500; }
+    .mc-type {
+      gap: var(--esp-1); border-radius: var(--r-s); padding: 0 var(--esp-2); line-height: 22px;
+      background: var(--type-fond); color: var(--type-texte); font-size: var(--txt-xs); font-weight: 600;
+    }
+    .mc-marque, .mc-marque.scenario, .mc-marque.auto, .mc-marque.ia, .mc-marque.demo {
+      text-transform: none; letter-spacing: 0; font-size: var(--txt-xs); font-weight: 600; line-height: 20px;
+      background: transparent; color: var(--texte-2); border: 1px solid #CBD5E1; border-radius: var(--r-s); padding: 0 var(--esp-2);
+    }
+    .mc-heure { margin-left: auto; font-size: var(--txt-xs); color: var(--discret); }
+    .mc-texte { font-size: var(--txt-md); line-height: 1.45; color: var(--encre); margin-top: var(--esp-2); }
+    .mc-source { font-size: var(--txt-sm); color: var(--discret); }
+    .mc-lien { color: var(--discret); }
+    .mc-bas { display: flex; align-items: center; gap: var(--esp-4); margin-top: var(--esp-2); min-height: 28px; }
+    .mc-entree .mc-lieu, .mc-entree button.mc-lieu {
+      margin: 0; min-width: 0; max-width: 70%; display: inline-flex; align-items: center; gap: var(--esp-1);
+      background: var(--fond); color: var(--texte-2); border: 1px solid var(--bord); border-radius: var(--r-s);
+      padding: 0 var(--esp-2); line-height: 24px; font-size: var(--txt-xs); font-weight: 500;
+    }
+    .mc-lieu-nom { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+    .mc-entree button.mc-action { margin-left: auto; font-size: var(--txt-sm); }
+    @media (pointer: coarse) { .mc-entree .mc-lieu { margin-top: 0; } .mc-bas { margin-top: var(--esp-3); } }
+    .extrait-point {
+      margin-top: var(--esp-2); padding: var(--esp-2) var(--esp-3); border-radius: var(--r-m);
+      background: #F0FDFA; color: #134E4A; font-size: var(--txt-sm); line-height: 1.45;
+    }
+    .extrait-texte { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .mc-entree .voir-point {
+      margin-top: var(--esp-1); background: none; border: none; padding: 0; cursor: pointer;
+      color: #0F766E; font-size: var(--txt-sm); font-weight: 600; text-decoration: underline; text-underline-offset: 3px;
+      position: relative;
+    }
+    @media (pointer: coarse) {
+      .voir-point::after { content: ''; position: absolute; left: -8px; right: -8px; top: 50%; height: 44px; transform: translateY(-50%); }
+      .voir-point { margin: var(--esp-3) 0; }
+    }
+    #mc-pied { background: var(--fond); border-top: 1px solid var(--bord); }
     /* Un champ qui reçoit le clavier ne s'arrête jamais sous le bandeau */
     input, select, textarea { scroll-margin-top: calc(var(--entete) + 16px); }
   </style>
@@ -1174,11 +1257,15 @@
 
     <!-- Main courante : journal horodaté de la gestion de crise -->
     <aside id="panneau" aria-label="Main courante">
+      <!-- En-tête du panneau ; « Point de situation » n'apparaît que si une IA est branchée (étape 8) -->
+      <div class="mc-tete">
+        <h2>Main courante <span id="mc-compte"></span></h2>
+        <button type="button" id="sit-generer" hidden></button>
+      </div>
       <!-- Point de situation rédigé par l'IA (étape 8) : visible seulement si une IA est branchée -->
       <section id="sit" hidden aria-label="Point de situation">
         <div class="sit-tete">
           <h2>Point de situation</h2>
-          <button type="button" id="sit-generer">Générer avec l’IA</button>
         </div>
         <p class="sit-aide">L’IA rédige un brouillon à partir des seules données affichées. Vous relisez, corrigez, puis validez.</p>
         <div id="sit-brouillon" hidden>
@@ -1199,8 +1286,8 @@
         </div>
       </section>
       <form id="mc-formulaire" novalidate>
-        <h2>Main courante <span id="mc-compte"></span></h2>
-        <div class="rangee">
+        <div class="mc-champs">
+          <div class="champ">
           <label for="mc-type">Type</label>
           <select id="mc-type">
             <option value="evenement">Événement</option>
@@ -1208,12 +1295,13 @@
             <option value="moyen">Moyen engagé</option>
             <option value="information">Information</option>
           </select>
-        </div>
-        <div class="rangee">
+          </div>
+          <div class="champ">
           <label for="mc-lieu">Lieu</label>
           <select id="mc-lieu">
             <option value="">— Aucun (optionnel) —</option>
           </select>
+          </div>
         </div>
         <div id="mc-correction" hidden>
           <span id="mc-correction-texte"></span>
@@ -1221,10 +1309,8 @@
         </div>
         <label for="mc-texte" class="mc-libelle-champ">Que se passe-t-il ?</label>
         <textarea id="mc-texte" rows="2" maxlength="1000" placeholder="ex. : Montée de la Saône, PC activé"></textarea>
-        <div class="rangee">
-          <button type="submit" id="mc-ajouter">Ajouter</button>
-          <span id="mc-erreur" role="alert"></span>
-        </div>
+        <span id="mc-erreur" role="alert"></span>
+        <button type="submit" id="mc-ajouter">Ajouter à la main courante</button>
       </form>
       <div id="mc-avertissement" hidden></div>
       <div id="app-avertissement" hidden></div>
@@ -1295,6 +1381,7 @@
     document.querySelector('#actualiser .act-icone').innerHTML = svg('actualiser', 16);
     document.querySelector('#demo-lecture .demo-icone').innerHTML = svg('pause', 18);
     document.querySelector('#demo-recommencer .demo-icone').innerHTML = svg('recommencer', 18);
+    document.getElementById('sit-generer').innerHTML = svg('pressePapiers', 16) + '<span>Point de situation</span>';
 
     // Vrai pendant le mode démo (déclaré ici : le chargement des stations le consulte)
     let modeDemo = false;
@@ -1703,12 +1790,13 @@
 
     const MC_TYPES = {
       // icone : clé de ICONES (SVG)
-      evenement:   { libelle: 'Événement',    icone: 'triangle', couleur: 'var(--type-evenement)' },
-      decision:    { libelle: 'Décision',     icone: 'coche',    couleur: 'var(--type-decision)' },
-      moyen:       { libelle: 'Moyen engagé', icone: 'camion',   couleur: 'var(--type-moyen)' },
-      information: { libelle: 'Information',  icone: 'info',     couleur: 'var(--type-information)' },
+      // teinte : [texte, fond] du badge de type (session UX 3)
+      evenement:   { libelle: 'Événement',    icone: 'triangle', couleur: 'var(--type-evenement)',   teinte: ['#B42318', '#FEE4E2'] },
+      decision:    { libelle: 'Décision',     icone: 'coche',    couleur: 'var(--type-decision)',    teinte: ['#1D4ED8', '#DBEAFE'] },
+      moyen:       { libelle: 'Moyen engagé', icone: 'camion',   couleur: 'var(--type-moyen)',       teinte: ['#6D28D9', '#EDE9FE'] },
+      information: { libelle: 'Information',  icone: 'info',     couleur: 'var(--type-information)', teinte: ['#334155', '#E2E8F0'] },
       // Point de situation validé (étape 8) : n'apparaît pas dans le menu, seulement via la validation humaine
-      point:       { libelle: 'Point de situation', icone: 'pressePapiers', couleur: 'var(--type-point)' }
+      point:       { libelle: 'Point de situation', icone: 'pressePapiers', couleur: 'var(--type-point)', teinte: ['#0F766E', '#CCFBF1'] }
     };
 
     const mc = {
@@ -1803,7 +1891,10 @@
         li.className = 'mc-entree' + (surlignees.has(e.n) ? ' surligne' : '');
         li.dataset.n = e.n;
         li.style.setProperty('--couleur-type', type.couleur);
+        li.style.setProperty('--type-texte', type.teinte[0]);
+        li.style.setProperty('--type-fond', type.teinte[1]);
 
+        // Ligne du haut : #N, type, origine, heure
         const entete = document.createElement('div');
         entete.className = 'mc-entete';
         const numero = document.createElement('span');
@@ -1813,35 +1904,16 @@
         badge.className = 'mc-type';
         badge.innerHTML = svg(type.icone, 14);              // icône : constante du code, jamais du texte saisi
         badge.appendChild(document.createTextNode(type.libelle));
+        entete.append(numero, badge);
+        // Origine, en contour gris : Scénario, Auto, IA relue, IA corrigée, Démo
+        const origine = e.scenario ? ['Scénario', 'scenario'] : e.auto ? ['Auto', 'auto']
+          : e.ia ? [e.iaModifie ? 'IA corrigée' : 'IA relue', 'ia'] : e.demo ? ['Démo', 'demo'] : null;
+        if (origine) creer('span', origine[0], 'mc-marque ' + origine[1], entete);
         const heure = document.createElement('time');
         heure.className = 'mc-heure';
         heure.dateTime = e.date;
         heure.textContent = heureAffichee(e);
-        entete.append(numero, badge);
-        // Marque « scénario » (ajoutée automatiquement par la démo) ou « démo » (saisie pendant la démo)
-        // Marque « auto » : écrite par la machine (alerte de menace, menace levée)
-        if (e.scenario || e.demo || e.auto) {
-          const marque = document.createElement('span');
-          marque.className = 'mc-marque' + (e.scenario ? ' scenario' : e.auto ? ' auto' : '');
-          marque.textContent = e.scenario ? 'scénario' : e.auto ? 'auto' : 'démo';
-          entete.appendChild(marque);
-        }
-        // Marque « IA relue » / « IA corrigée » : point de situation rédigé par l'IA, validé par un humain
-        if (e.ia) {
-          const marque = document.createElement('span');
-          marque.className = 'mc-marque ia';
-          marque.textContent = e.iaModifie ? 'IA corrigée' : 'IA relue';
-          entete.appendChild(marque);
-        }
-        // Saisie humaine : « Corriger ». Écrit par la machine (scénario, alerte auto, point de situation IA) :
-        // « Annoter » — on n'en corrige pas le contenu, on y ajoute une remarque humaine.
-        const parLaMachine = !!(e.scenario || e.auto || e.ia);
-        const corriger = document.createElement('button');
-        corriger.type = 'button';
-        corriger.className = 'mc-action';
-        corriger.textContent = parLaMachine ? 'Annoter' : 'Corriger';
-        corriger.addEventListener('click', () => (parLaMachine ? commencerAnnotation(e.n) : commencerCorrection(e.n)));
-        entete.append(heure, corriger);
+        entete.appendChild(heure);
         li.appendChild(entete);
 
         if (e.corrige || e.annote) {
@@ -1853,7 +1925,28 @@
         const texte = document.createElement('div');
         texte.className = 'mc-texte';
         texte.textContent = e.texte;
-        li.appendChild(texte);
+        // Point de situation validé : extrait de 2 lignes (partie SITUATION) + « Voir le point complet »
+        if (e.type === 'point') {
+          const extrait = creer('div', '', 'extrait-point', li);
+          creer('span', extraitSituation(e.texte), 'extrait-texte', extrait);
+          texte.hidden = !pointsDeplies.has(e.n);
+          const voir = document.createElement('button');
+          voir.type = 'button';
+          voir.className = 'voir-point';
+          voir.textContent = texte.hidden ? 'Voir le point complet' : 'Masquer le point complet';
+          voir.setAttribute('aria-expanded', texte.hidden ? 'false' : 'true');
+          voir.addEventListener('click', () => {
+            texte.hidden = !texte.hidden;
+            if (texte.hidden) pointsDeplies.delete(e.n); else pointsDeplies.add(e.n);
+            extrait.hidden = !texte.hidden;
+            voir.textContent = texte.hidden ? 'Voir le point complet' : 'Masquer le point complet';
+            voir.setAttribute('aria-expanded', texte.hidden ? 'false' : 'true');
+          });
+          extrait.hidden = !texte.hidden;
+          li.append(texte, voir);
+        } else {
+          li.appendChild(texte);
+        }
 
         if (e.source) {
           const source = document.createElement('div');
@@ -1861,14 +1954,19 @@
           source.textContent = 'Source : ' + e.source;
           li.appendChild(source);
         }
+        if (corrigeePar[e.n]) creer('div', 'Corrigée par ' + corrigeePar[e.n].map(n => '#' + n).join(', '), 'mc-lien', li);
+        if (annoteePar[e.n]) creer('div', 'Annotée par ' + annoteePar[e.n].map(n => '#' + n).join(', '), 'mc-lien', li);
 
-        // Lieu lié : « épingle + nom », qu'on touche pour voir le point sur la carte
+        // Ligne du bas : lieu (puce grise) à gauche, « Corriger » / « Annoter » à droite
+        const bas = document.createElement('div');
+        bas.className = 'mc-bas';
         if (e.lieu) {
           const p = trouverPoint(e.lieu);
           const lieu = document.createElement(p ? 'button' : 'span');
           lieu.className = 'mc-lieu';
           lieu.innerHTML = svg('epingle', 14);
           const nomLieu = document.createElement('span');
+          nomLieu.className = 'mc-lieu-nom';
           nomLieu.textContent = p ? p.nom : 'lieu inconnu';   // nom saisi : toujours en textContent
           lieu.appendChild(nomLieu);
           if (p) {
@@ -1876,24 +1974,31 @@
             lieu.title = 'Voir ce lieu sur la carte';
             lieu.addEventListener('click', () => montrerPoint(p.id));
           }
-          li.appendChild(lieu);
+          bas.appendChild(lieu);
         }
-
-        if (corrigeePar[e.n]) {
-          const note = document.createElement('div');
-          note.className = 'mc-lien';
-          note.textContent = 'Corrigée par ' + corrigeePar[e.n].map(n => '#' + n).join(', ');
-          li.appendChild(note);
-        }
-        if (annoteePar[e.n]) {
-          const note = document.createElement('div');
-          note.className = 'mc-lien';
-          note.textContent = 'Annotée par ' + annoteePar[e.n].map(n => '#' + n).join(', ');
-          li.appendChild(note);
-        }
+        // Saisie humaine : « Corriger ». Écrit par la machine (scénario, alerte auto, point de situation IA) :
+        // « Annoter » — on n'en corrige pas le contenu, on y ajoute une remarque humaine.
+        const parLaMachine = !!(e.scenario || e.auto || e.ia);
+        const corriger = document.createElement('button');
+        corriger.type = 'button';
+        corriger.className = 'mc-action';
+        corriger.textContent = parLaMachine ? 'Annoter' : 'Corriger';
+        corriger.addEventListener('click', () => (parLaMachine ? commencerAnnotation(e.n) : commencerCorrection(e.n)));
+        bas.appendChild(corriger);
+        li.appendChild(bas);
         mc.liste.appendChild(li);
       }
       observerNouvelles();
+    }
+
+    // Point de situation : la partie SITUATION (sinon le début du texte), pour l'extrait de 2 lignes
+    const pointsDeplies = new Set();
+    function extraitSituation(texte) {
+      const lignes = String(texte).split('\n');
+      const i = lignes.findIndex(l => /^\s*SITUATION\b/.test(l));
+      const suite = i >= 0 ? lignes.slice(i + 1) : lignes;
+      const fin = suite.findIndex(l => /^\s*[A-ZÀ-Ý][A-ZÀ-Ý ()’'-]{6,}\s*$/.test(l));
+      return (fin >= 0 ? suite.slice(0, fin) : suite).map(l => l.replace(/^\s*[-–•]\s*/, '')).join(' ').replace(/\s+/g, ' ').trim() || String(texte).slice(0, 200);
     }
 
     // ---------- Signal « nouvelles entrées » ----------
@@ -3641,7 +3746,7 @@
       (async () => {
         if (!window.claude || typeof window.claude.use !== 'function') return;
         try { iaSample = await window.claude.use('sample'); } catch (e) { iaSample = null; }
-        if (typeof iaSample === 'function') sit.section.hidden = false;
+        if (typeof iaSample === 'function') { sit.section.hidden = false; sit.generer.hidden = false; }
       })();
     }
   </script>
