@@ -4,6 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Métis — Lyon</title>
+  <!-- Favicon : le logo Métis (SVG en dur, aucune ressource externe) -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2028%2028%22%3E%3Ccircle%20cx%3D%2214%22%20cy%3D%2214%22%20r%3D%2214%22%20fill%3D%22%230B1220%22%2F%3E%3Ccircle%20cx%3D%2214%22%20cy%3D%2214%22%20r%3D%2212%22%20fill%3D%22none%22%20stroke%3D%22%23F8FAFC%22%20stroke-width%3D%221.6%22%2F%3E%3Ccircle%20cx%3D%2214%22%20cy%3D%2214%22%20r%3D%228%22%20fill%3D%22none%22%20stroke%3D%22%23475569%22%20stroke-width%3D%221%22%2F%3E%3Cpath%20d%3D%22M14%204.5%20L16.6%2014%20L11.4%2014%20Z%22%20fill%3D%22%23D9A441%22%2F%3E%3Cpath%20d%3D%22M14%2023.5%20L16.6%2014%20L11.4%2014%20Z%22%20fill%3D%22%2394A3B8%22%2F%3E%3Ccircle%20cx%3D%2214%22%20cy%3D%2214%22%20r%3D%221.6%22%20fill%3D%22%230B1220%22%2F%3E%3C%2Fsvg%3E">
 
   <script>
     // =====================================================================
@@ -883,6 +885,82 @@
       }
       .mc-entree .mc-lieu { margin-top: var(--esp-4); }
     }
+
+    /* =====================================================================
+       BANDEAU EN BARRE D'ÉTAT (session UX 3)
+       Ligne 1 : logo + MÉTIS | Lyon, boutons en contour. Ligne 2 : pastilles de synthèse
+       (fond --nuit-2), chacune précédée du même symbole que la carte.
+       ===================================================================== */
+    #bandeau { background: var(--nuit); color: #F8FAFC; gap: 0; padding-bottom: 0 !important; box-shadow: 0 1px 0 #1E293B, 0 2px 8px rgba(2,6,23,.35); }
+    .ligne-titre { height: 44px; min-height: 44px; gap: var(--esp-2); }
+    .ligne-titre .titre { display: flex; align-items: center; gap: var(--esp-2); min-width: 0; }
+    .titre .logo { flex: none; display: block; }
+    .titre .marque { font-size: var(--txt-md); font-weight: 700; letter-spacing: .14em; color: #F8FAFC; }
+    .titre .filet { width: 1px; height: 18px; background: #334155; flex: none; }
+    .titre .ville { font-size: var(--txt-sm); font-weight: 500; color: #94A3B8; letter-spacing: 0; }
+    #actualiser, #demo-entrer {
+      height: 32px; padding: 0 var(--esp-3); border-radius: var(--r-m);
+      background: transparent; color: #E2E8F0; border: 1px solid #334155;
+      font-size: var(--txt-sm); font-weight: 600;
+      display: inline-flex; align-items: center; gap: var(--esp-2);
+    }
+    #actualiser:hover, #demo-entrer:hover { background: #1E293B; }
+    .etiquette-simulees {
+      font-size: var(--txt-xs); font-weight: 600; color: #A5B4FC; letter-spacing: .04em;
+      border: 1px solid #4338CA; border-radius: var(--r-s); padding: var(--esp-1) var(--esp-2);
+    }
+    .ligne-synthese { height: 44px; min-height: 44px; align-items: center; gap: var(--esp-3); }
+    #synthese { flex-wrap: nowrap; max-height: none; height: 28px; align-items: center; gap: var(--esp-2); }
+    .puce, .puce.normal, .puce.inconnu, .puce.vigilance, .puce.alerte, .puce.touche, .puce.evacue, .puce.menace,
+    .puce.vig-verte, .puce.vig-jaune, .puce.vig-orange, .puce.vig-rouge {
+      display: inline-flex; align-items: center; gap: var(--esp-2);
+      height: 28px; padding: 0 var(--esp-3) 0 var(--esp-2); box-sizing: border-box; line-height: 1;
+      border-radius: var(--r-s); border: none; background: var(--nuit-2); color: #E2E8F0;
+      font-size: var(--txt-sm); font-weight: 500;
+    }
+    .puce.sans-symbole { padding-left: var(--esp-3); }
+    .puce.avertissement { background: var(--nuit-2); color: #FCD34D; border: 1px solid #A16207; font-weight: 600; }
+    /* Symboles de 18 px, les mêmes que sur la carte */
+    .sym {
+      flex: none; width: 18px; height: 18px; box-sizing: border-box;
+      display: inline-flex; align-items: center; justify-content: center;
+      font: 800 var(--txt-xs)/1 var(--police); letter-spacing: -.5px; border-radius: 50%;
+    }
+    .sym.s-normal { background: #2E7D32; color: #fff; }
+    .sym.s-vigilance { background: #EF6C00; color: #1C1917; }
+    .sym.s-alerte { background: #C62828; color: #fff; }
+    .sym.s-inconnu { background: #64748B; color: #fff; border: 1.5px dashed #fff; }
+    .sym.s-sansSeuil { background: #64748B; color: #fff; }
+    /* points : anneau de couleur sur fond blanc (comme les pastilles de la carte) */
+    .sym.p-menace { background: #fff; color: #1C1917; border: 2.5px solid #EF6C00; }
+    .sym.p-touche { background: #fff; color: #C62828; border: 2.5px solid #C62828; }
+    .sym.p-evacue { background: #fff; color: #7B1FA2; border: 2.5px solid #7B1FA2; }
+    /* vigilance crues : carré arrondi de la couleur du niveau */
+    .sym.v-verte, .sym.v-jaune, .sym.v-orange, .sym.v-rouge, .sym.attention { border-radius: 4px; }
+    .sym.v-verte { background: #2E7D32; color: #fff; }
+    .sym.v-jaune { background: #FDD835; color: #1C1917; }
+    .sym.v-orange { background: #EF6C00; color: #1C1917; }
+    .sym.v-rouge { background: #C62828; color: #fff; }
+    .sym.attention { background: #FBBF24; color: #1C1917; }
+    /* « +N » : ouvre les Détails existants */
+    #synthese-details-bouton {
+      height: 28px; min-width: 44px; padding: 0 var(--esp-3); box-sizing: border-box;
+      border-radius: var(--r-s); border: 1px solid #334155; background: transparent; color: #E2E8F0;
+      font: 600 var(--txt-sm)/1 var(--police-mono);
+    }
+    /* Téléphone : pastilles plus serrées (12 px), pour que les 3 plus graves tiennent avec « +N » */
+    @media (max-width: 767px) {
+      #synthese { gap: var(--esp-1); }
+      .puce, .puce.normal, .puce.inconnu, .puce.vigilance, .puce.alerte, .puce.touche, .puce.evacue, .puce.menace,
+      .puce.vig-verte, .puce.vig-jaune, .puce.vig-orange, .puce.vig-rouge, .puce.avertissement {
+        font-size: var(--txt-xs); gap: var(--esp-1); padding: 0 var(--esp-2) 0 var(--esp-1);
+      }
+      .puce.sans-symbole { padding-left: var(--esp-2); }
+      #synthese-details-bouton { padding: 0 var(--esp-2); }
+      #bandeau { padding-left: max(var(--esp-3), env(safe-area-inset-left, 0px)); padding-right: max(var(--esp-3), env(safe-area-inset-right, 0px)); }
+    }
+    /* Fraîcheur des données, à droite (ordinateur) */
+    .fraicheur { margin-left: auto; flex: none; font-size: var(--txt-xs); color: #94A3B8; white-space: nowrap; }
     /* Un champ qui reçoit le clavier ne s'arrête jamais sous le bandeau */
     input, select, textarea { scroll-margin-top: calc(var(--entete) + 16px); }
   </style>
@@ -890,13 +968,15 @@
 <body>
   <header id="bandeau">
     <div class="ligne-titre">
-      <span class="titre">Métis — Lyon</span>
+      <span class="titre"><svg class="logo" width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="12" fill="none" stroke="#F8FAFC" stroke-width="1.6"/><circle cx="14" cy="14" r="8" fill="none" stroke="#475569" stroke-width="1"/><path d="M14 4.5 L16.6 14 L11.4 14 Z" fill="#D9A441"/><path d="M14 23.5 L16.6 14 L11.4 14 Z" fill="#94A3B8"/><circle cx="14" cy="14" r="1.6" fill="#0B1220"/></svg><span class="marque">MÉTIS</span><span class="filet" aria-hidden="true"></span><span class="ville">Lyon</span></span>
+      <span class="etiquette-simulees" id="etiquette-simulees" hidden>DONNÉES SIMULÉES</span>
       <button type="button" id="actualiser" title="Recharger maintenant les hauteurs d’eau (Hub’Eau)"><span class="act-icone" aria-hidden="true"></span><span class="act-libelle">Actualiser</span></button>
       <button type="button" id="demo-entrer">Mode démo</button>
     </div>
     <!-- Synthèse : où on en est, y compris ce qu'on ne sait pas (le plus grave d'abord) -->
     <div class="ligne-synthese">
       <div id="synthese" role="status" aria-live="polite"><span class="puce">Chargement des stations…</span><button type="button" id="synthese-details-bouton" hidden aria-expanded="false" aria-controls="synthese-details">Détails</button></div>
+      <span class="fraicheur" id="fraicheur" hidden></span>
     </div>
   </header>
   <div id="synthese-details" hidden role="region" aria-label="Synthèse détaillée"></div>
@@ -2892,12 +2972,13 @@
     // « garde » : plus le nombre est petit, plus l'élément est important (gardé en dernier sur petit écran).
     function elementsSynthese() {
       const el = [];
-      const ajouter = (texte, classe, garde, detail) => el.push({ texte, classe, garde, detail: detail || texte });
+      // sym : symbole repris de la carte (voir SYMBOLES_PUCE) ; fraicheur : affichée à droite sur ordinateur
+      const ajouter = (texte, classe, garde, detail, sym, fraicheur, court) => el.push({ texte, classe, garde, detail: detail || texte, sym, fraicheur: !!fraicheur, court });
 
       // Vigilance crues : en démo seulement (aucune source officielle branchée en mode réel)
       if (modeDemo) {
         const v = vigilanceDemo();
-        if (v) ajouter('Vigilance ' + v, 'vig-' + v, 0, 'Vigilance crues : ' + v + ' (chronologie fictive du scénario)');
+        if (v) ajouter('Vigilance ' + v, 'vig-' + v, 0, 'Vigilance crues : ' + v + ' (chronologie fictive du scénario)', 'v-' + v, false, 'Crues ' + v);
       }
 
       // Stations
@@ -2905,48 +2986,49 @@
       if (!c) {
         if (!modeDemo && chargement.enCours) ajouter('Chargement des stations…', '', 1);
         else if (!modeDemo) ajouter('Stations indisponibles', 'avertissement', 1,
-          'Stations indisponibles : le service Hub’Eau ne répond pas' + (chargement.echec ? ' (essai à ' + heureMinute(chargement.echec) + ')' : '') + '.');
+          'Stations indisponibles : le service Hub’Eau ne répond pas' + (chargement.echec ? ' (essai à ' + heureMinute(chargement.echec) + ')' : '') + '.', 'attention');
       } else {
         ajouter(pluriel(c.total, 'station', 'stations'), '', 9, null);
-        if (c.alerte) ajouter(c.alerte + ' en alerte', 'alerte', 1);
-        if (c.vigilance) ajouter(c.vigilance + ' en vigilance', 'vigilance', 4);
-        if (c.normal) ajouter(pluriel(c.normal, 'normale', 'normales'), 'normal', 8);
+        if (c.alerte) ajouter(c.alerte + ' en alerte', 'alerte', 1, null, 's-alerte');
+        if (c.vigilance) ajouter(c.vigilance + ' en vigilance', 'vigilance', 4, null, 's-vigilance', false, c.vigilance + ' vigilance');
+        if (c.normal) ajouter(pluriel(c.normal, 'normale', 'normales'), 'normal', 8, null, 's-normal');
         if (c.sansDonnee) ajouter(c.sansDonnee + ' sans donnée', 'inconnu', 3,
-          c.sansDonnee + ' sans donnée (pas de mesure, mesure de plus de ' + MESURE_RECENTE_HEURES + ' h ou service muet) : leur situation est inconnue');
+          c.sansDonnee + ' sans donnée (pas de mesure, mesure de plus de ' + MESURE_RECENTE_HEURES + ' h ou service muet) : leur situation est inconnue', 's-inconnu');
         if (c.sansSeuil) ajouter(c.sansSeuil + ' sans seuil', 'inconnu', 7,
-          c.sansSeuil + ' sans seuil (mesurées, mais aucun seuil pour les juger)');
+          c.sansSeuil + ' sans seuil (mesurées, mais aucun seuil pour les juger)', 's-sansSeuil');
       }
 
       // Points sensibles : seulement ceux qui ne sont pas normaux
       const n = { menace: 0, touche: 0, evacue: 0 };
       for (const p of tousPoints()) { const st = etatDe(p.id).statut; if (st in n) n[st]++; }
-      if (n.touche) ajouter(pluriel(n.touche, 'point touché', 'points touchés'), 'touche', 1);
-      if (n.evacue) ajouter(pluriel(n.evacue, 'point évacué', 'points évacués'), 'evacue', 2);
-      if (n.menace) ajouter(pluriel(n.menace, 'point menacé', 'points menacés'), 'menace', 2);
+      // libellé court sur téléphone : l'anneau dit déjà qu'il s'agit d'un point
+      if (n.touche) ajouter(pluriel(n.touche, 'point touché', 'points touchés'), 'touche', 1, null, 'p-touche', false, pluriel(n.touche, 'touché', 'touchés'));
+      if (n.evacue) ajouter(pluriel(n.evacue, 'point évacué', 'points évacués'), 'evacue', 2, null, 'p-evacue', false, pluriel(n.evacue, 'évacué', 'évacués'));
+      if (n.menace) ajouter(pluriel(n.menace, 'point menacé', 'points menacés'), 'menace', 2, null, 'p-menace', false, pluriel(n.menace, 'menacé', 'menacés'));
 
       // Fraîcheur des données
       if (modeDemo) {
-        ajouter('Données simulées', '', 6, 'Données simulées : scénario de crue fictif, aucune mesure réelle.');
+        ajouter('Données simulées', '', 6, 'Données simulées : scénario de crue fictif, aucune mesure réelle.', null, true);
       } else if (chargement.stations) {
         if (chargement.echec) {
           ajouter('Échec de l’actualisation à ' + heureMinute(chargement.echec), 'avertissement', 0,
-            'Échec de l’actualisation à ' + heureMinute(chargement.echec) + ' : Hub’Eau n’a pas répondu, les dernières données reçues restent affichées.');
+            'Échec de l’actualisation à ' + heureMinute(chargement.echec) + ' : Hub’Eau n’a pas répondu, les dernières données reçues restent affichées.', 'attention');
         }
         if (!chargement.mesuresDe) {
-          ajouter('Aucune mesure reçue', 'avertissement', 0);
+          ajouter('Aucune mesure reçue', 'avertissement', 0, null, 'attention');
         } else {
           const ageMin = (Date.now() - chargement.mesuresDe.getTime()) / 60000;
           const quand = heureMinute(chargement.mesuresDe) + ' · ' + depuis(chargement.mesuresDe);
           if (ageMin > DONNEES_ANCIENNES_MIN) {
             ajouter('DONNÉES ANCIENNES · ' + depuis(chargement.mesuresDe), 'avertissement', 0,
               'DONNÉES ANCIENNES : la mesure la plus récente date de ' + heureMinute(chargement.mesuresDe)
-              + ' (' + depuis(chargement.mesuresDe) + ', plus de ' + DONNEES_ANCIENNES_MIN + ' min).');
+              + ' (' + depuis(chargement.mesuresDe) + ', plus de ' + DONNEES_ANCIENNES_MIN + ' min).', 'attention');
           } else {
             ajouter('Données de ' + quand, '', 5, 'Données de ' + heureMinute(chargement.mesuresDe)
-              + ' (' + depuis(chargement.mesuresDe) + ') : heure de la mesure la plus récente.');
+              + ' (' + depuis(chargement.mesuresDe) + ') : heure de la mesure la plus récente.', null, true);
           }
         }
-        if (chargement.enCours) ajouter('Actualisation…', '', 6);
+        if (chargement.enCours) ajouter('Actualisation…', '', 6, null, null, true);
       }
       return el;
     }
@@ -2993,39 +3075,68 @@
     }
     synthese.bouton.addEventListener('click', () => basculerDetails(synthese.details.hidden));
 
-    // Affiche les éléments ; s'ils ne tiennent pas sur la ligne, on retire d'abord les moins importants
+    // Symboles des pastilles (les mêmes que sur la carte) ; contenu = constantes du code
+    const SYMBOLES_PUCE = {
+      's-normal': '✓', 's-vigilance': '!', 's-alerte': '!!', 's-inconnu': '?', 's-sansSeuil': '–',
+      'p-menace': '!', 'p-touche': '✕', 'p-evacue': '↗︎',
+      'v-verte': '✓', 'v-jaune': '!', 'v-orange': '!', 'v-rouge': '!!', 'attention': '!'
+    };
+    const etiquetteSimulees = document.getElementById('etiquette-simulees');
+    const fraicheurBandeau = document.getElementById('fraicheur');
+
+    // Affiche les éléments. Téléphone : les 3 plus graves puis « +N ». Ordinateur : tout sur une ligne,
+    // la fraîcheur à droite. S'ils ne tiennent pas, on retire d'abord les moins importants (« +N »).
     function majSynthese() {
       const el = elementsSynthese();
-      const signature = JSON.stringify(el.map(e => [e.texte, e.classe])) + '|' + synthese.ligne.clientWidth;
+      const tel = PETIT_ECRAN.matches;
+      const signature = JSON.stringify(el.map(e => [e.texte, e.classe])) + '|' + synthese.ligne.clientWidth + '|' + tel;
       boutonActualiser.disabled = chargement.enCours;
       boutonActualiser.querySelector('.act-libelle').textContent = chargement.enCours ? 'Actualisation…' : 'Actualiser';
+      etiquetteSimulees.hidden = !modeDemo;
       if (signature === signatureSynthese) return;   // rien n'a changé (la démo appelle 4 fois par seconde)
       signatureSynthese = signature;
 
+      // Ordinateur : la fraîcheur (non alarmante) va à droite, en texte ; le reste en pastilles
+      const aDroite = tel ? [] : el.filter(e => e.fraicheur);
+      fraicheurBandeau.hidden = !aDroite.length;
+      fraicheurBandeau.textContent = aDroite.map(e => e.texte).join(' · ');
+      const enPastilles = el.filter(e => !aDroite.includes(e));
+
       synthese.ligne.textContent = '';
-      const puces = el.map(e => {
+      const puces = enPastilles.map(e => {
         const span = document.createElement('span');
-        span.className = 'puce' + (e.classe ? ' ' + e.classe : '');
-        span.textContent = e.texte;
+        span.className = 'puce' + (e.classe ? ' ' + e.classe : '') + (e.sym ? '' : ' sans-symbole');
+        if (e.sym) span.innerHTML = '<span class="sym ' + e.sym + '" aria-hidden="true">' + SYMBOLES_PUCE[e.sym] + '</span>';
+        span.appendChild(document.createTextNode(tel && e.court ? e.court : e.texte));
+        if (tel && e.court) span.title = e.texte;
         synthese.ligne.appendChild(span);
         return { span, garde: e.garde };
       });
-      synthese.ligne.appendChild(synthese.bouton);   // « Détails » toujours en dernier
-      // Ajustement : sur deux lignes au plus ; sinon on cache les moins importants et on propose « Détails »
-      synthese.bouton.hidden = true;
-      const deborde = () => synthese.ligne.scrollHeight > synthese.ligne.clientHeight + 1;
-      const ordre = [...puces].sort((a, b) => b.garde - a.garde);
+      synthese.ligne.appendChild(synthese.bouton);   // « +N » toujours en dernier
+      const ordre = [...puces].sort((a, b) => b.garde - a.garde);   // du moins au plus important
       let caches = 0;
+      const cacher = p => { p.span.hidden = true; caches++; };
+      if (tel) for (const p of ordre.slice(0, Math.max(0, puces.length - 3))) cacher(p);   // téléphone : 3 au plus
+      const majBouton = () => {
+        synthese.bouton.hidden = !caches;
+        synthese.bouton.textContent = '+' + caches;
+        synthese.bouton.setAttribute('aria-label', 'Détails : ' + caches + (caches > 1 ? ' éléments' : ' élément') + ' de plus');
+      };
+      majBouton();
+      const deborde = () => synthese.ligne.scrollWidth > synthese.ligne.clientWidth + 1;
       for (const p of ordre) {
         if (!deborde()) break;
+        if (p.span.hidden) continue;
         if (puces.length - caches <= 1) break;   // on garde toujours au moins l'élément le plus grave
-        p.span.hidden = true;
-        caches++;
-        synthese.bouton.hidden = false;
+        cacher(p);
+        majBouton();
       }
-      synthese.bouton.textContent = caches ? 'Détails (+' + caches + ')' : 'Détails';
-      // Le bouton « Détails » reste proposé dès qu'il y a quelque chose d'important à lire en entier
-      if (!caches && el.some(e => e.classe === 'avertissement')) synthese.bouton.hidden = false;
+      // « Détails » reste proposé dès qu'il y a un avertissement à lire en entier
+      if (!caches && el.some(e => e.classe === 'avertissement')) {
+        synthese.bouton.hidden = false;
+        synthese.bouton.textContent = 'Détails';
+        synthese.bouton.setAttribute('aria-label', 'Détails de la synthèse');
+      }
       if (!synthese.details.hidden) remplirDetails(el);
     }
 
