@@ -37,6 +37,16 @@
     const TENDANCE_HEURES = 3;
   </script>
 
+  <!-- Polices hébergées dans le dépôt (polices/, licence SIL OFL 1.1 : voir polices/LICENCE-*.txt) -->
+  <style>
+    @font-face { font-family: 'Inter'; font-style: normal; font-weight: 400; font-display: swap; src: url('polices/Inter-Regular.woff2') format('woff2'); }
+    @font-face { font-family: 'Inter'; font-style: normal; font-weight: 500; font-display: swap; src: url('polices/Inter-Medium.woff2') format('woff2'); }
+    @font-face { font-family: 'Inter'; font-style: normal; font-weight: 600; font-display: swap; src: url('polices/Inter-SemiBold.woff2') format('woff2'); }
+    @font-face { font-family: 'Inter'; font-style: normal; font-weight: 700; font-display: swap; src: url('polices/Inter-Bold.woff2') format('woff2'); }
+    @font-face { font-family: 'JetBrains Mono'; font-style: normal; font-weight: 500; font-display: swap; src: url('polices/JetBrainsMono-Medium.woff2') format('woff2'); }
+    @font-face { font-family: 'JetBrains Mono'; font-style: normal; font-weight: 600; font-display: swap; src: url('polices/JetBrainsMono-SemiBold.woff2') format('woff2'); }
+  </style>
+
   <!-- Leaflet (bibliothèque de carte), chargée depuis un CDN -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -47,10 +57,20 @@
          des bordures (1 à 3 px), des ombres, des 44 px de toucher et des décalages de centrage. */
       --esp-1: 4px; --esp-2: 8px; --esp-3: 12px; --esp-4: 16px; --esp-5: 24px; --esp-6: 32px;
       --txt-xs: 12px; --txt-sm: 14px; --txt-md: 16px; --txt-lg: 18px; --txt-xl: 24px;
+      /* Jetons d'habillage (session UX 3) : direction claire et sobre, façon instrument */
+      --encre: #0F172A; --texte-2: #334155; --discret: #475569; --bord: #E2E8F0;
+      --fond: #F1F5F9; --surface: #FFFFFF; --nuit: #0B1220; --nuit-2: #1E293B;
+      --bronze: #D9A441;                       /* signature, rare */
+      --r-s: 6px;  /* pastilles, badges */  --r-m: 10px;  /* boutons, champs */  --r-l: 14px;  /* cartes, fenêtres */
+      --ombre-1: 0 1px 2px rgba(15,23,42,.08), 0 2px 8px rgba(15,23,42,.08);
+      --ombre-2: 0 10px 30px rgba(15,23,42,.22), 0 2px 6px rgba(15,23,42,.10);
+      --police: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      --police-mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+      /* États (inchangés) */
       --vert: #2e7d32;
       --orange: #ef6c00;
       --rouge: #c62828;
-      --gris: #8a94a3;
+      --gris: #64748b;
       --violet: #7b1fa2;
       --haut-bandeau: 76px;    /* bandeau du haut : titre + synthèse (mesuré en direct par le script) */
       --entete: var(--haut-bandeau);                  /* hauteur totale des bandeaux fixes en haut */
@@ -60,9 +80,17 @@
     html, body {
       margin: 0;
       height: 100%;
-      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-      background: #1b2430;
+      font-family: var(--police);
+      font-variant-numeric: tabular-nums;     /* chiffres alignés partout */
+      background: var(--fond);
+      color: var(--encre);
     }
+    /* Boutons et champs prennent la police de la page */
+    button, input, select, textarea { font-family: inherit; }
+    .leaflet-container { font-family: var(--police); }
+    /* JetBrains Mono : heures, numéros d'entrée, compteurs, ×1 */
+    #demo-horloge, .mc-heure, .mc-numero, #mc-compte, #demo-vitesse .demo-icone,
+    .historique li, .fraicheur, .mono { font-family: var(--police-mono); font-weight: 500; }
     /* Bandeau en haut */
     #bandeau {
       position: fixed;
@@ -257,11 +285,12 @@
 
     /* ---------- Main courante (panneau de droite) ---------- */
     :root {
-      --mc-fond: #f4f6f9;
-      --mc-carte: #ffffff;
-      --mc-bord: #d5dbe3;
-      --mc-texte: #1b2430;
-      --mc-discret: #5d6b7c;
+      /* alias des jetons d'habillage (gardés : ils servent partout) */
+      --mc-fond: var(--fond);
+      --mc-carte: var(--surface);
+      --mc-bord: var(--bord);
+      --mc-texte: var(--encre);
+      --mc-discret: var(--discret);
       /* Types de la main courante : teintes hors états (rouge, orange, vert, gris, violet sont réservés aux états) */
       --type-evenement: #be185d;
       --type-decision: #1d4ed8;
