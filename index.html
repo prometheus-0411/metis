@@ -961,6 +961,58 @@
     }
     /* Fraîcheur des données, à droite (ordinateur) */
     .fraicheur { margin-left: auto; flex: none; font-size: var(--txt-xs); color: #94A3B8; white-space: nowrap; }
+
+    /* =====================================================================
+       BARRE DÉMO ET CONTRÔLES DE CARTE (session UX 3)
+       ===================================================================== */
+    .demo-etiquette, .demo-temps .demo-etiquette { background: #fff; color: #312E81; font-size: var(--txt-xs); font-weight: 700; letter-spacing: .08em; border-radius: var(--r-s); padding: 0 var(--esp-2); line-height: 20px; }
+    #demo-horloge { font-size: var(--txt-md); color: #fff; font-weight: 600; }
+    #demo-phase { font-size: var(--txt-sm); color: #C7D2FE; font-weight: 500; }
+    .demo-btn, #demo-lecture, #demo-vitesse, #demo-recommencer {
+      background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.28); border-radius: 8px; color: #fff;
+    }
+    .demo-btn:hover { background: rgba(255,255,255,.16); }
+    #demo-quitter { background: #fff; color: #312E81; font-weight: 700; border: 1px solid #fff; }
+    /* Zoom + / − : un seul bloc blanc, séparateur de 1 px */
+    .leaflet-control-zoom.leaflet-bar, .leaflet-touch .leaflet-control-zoom.leaflet-bar {
+      display: block; border: 1px solid var(--bord); border-radius: var(--r-m); box-shadow: var(--ombre-1);
+      overflow: hidden; background: var(--surface); gap: 0;
+    }
+    .leaflet-control-zoom.leaflet-bar a, .leaflet-touch .leaflet-control-zoom.leaflet-bar a {
+      width: 44px; height: 44px; line-height: 44px; font-size: var(--txt-xl); font-weight: 500;
+      color: var(--encre); background: var(--surface); border: none; border-radius: 0;
+    }
+    .leaflet-control-zoom.leaflet-bar a:first-child { border-bottom: 1px solid var(--bord); }
+    .leaflet-control-zoom.leaflet-bar a:hover { background: var(--fond); }
+    /* « Recentrer » : bloc séparé de 44 × 44, icône viseur */
+    .recentrer-bouton, .leaflet-touch .recentrer-bouton {
+      width: 44px; height: 44px; padding: 0; display: flex; align-items: center; justify-content: center;
+      background: var(--surface); color: var(--encre); border: 1px solid var(--bord); border-radius: var(--r-m);
+      box-shadow: var(--ombre-1); background-clip: border-box;
+    }
+    /* « + Ajouter un point » */
+    .ps-bouton {
+      display: inline-flex; align-items: center; gap: var(--esp-2);
+      min-height: 40px; padding: 0 var(--esp-4) 0 var(--esp-3);
+      background: var(--encre); color: #fff; font-size: var(--txt-sm); font-weight: 600;
+      border-radius: var(--r-m); box-shadow: 0 1px 2px rgba(15,23,42,.2), 0 4px 12px rgba(15,23,42,.18);
+    }
+    .ps-bouton .ico { width: 18px; height: 18px; }
+    .ps-aide { border-radius: var(--r-m); box-shadow: var(--ombre-1); color: var(--encre); }
+    /* Légende : bouton blanc (icône calques) ; ouverte, carte blanche */
+    .legende, .legende.repliee {
+      background: var(--surface); border: 1px solid var(--bord); border-radius: var(--r-l);
+      box-shadow: var(--ombre-1); color: var(--encre);
+    }
+    .legende.repliee { padding: 0; border-radius: var(--r-m); }
+    .legende-bouton { gap: var(--esp-2); min-height: 40px; padding: 0 var(--esp-3); color: var(--encre); font-size: var(--txt-sm); font-weight: 600; }
+    .legende:not(.repliee) .legende-bouton { padding: 0; }
+    .leg-titre { font-size: var(--txt-xs); font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--discret); margin: var(--esp-1) 0; }
+    .leg-famille { display: flex; align-items: center; gap: var(--esp-2); flex-wrap: wrap; margin: var(--esp-1) 0; }
+    .leg-famille-nom { font-weight: 600; color: var(--encre); }
+    .leg-types { display: inline-flex; gap: var(--esp-2); color: var(--texte-2); }
+    .leg-type { display: inline-flex; }
+    @media (pointer: coarse) { .legende-bouton, .ps-bouton { min-height: 44px; } }
     /* Un champ qui reçoit le clavier ne s'arrête jamais sous le bandeau */
     input, select, textarea { scroll-margin-top: calc(var(--entete) + 16px); }
   </style>
@@ -1125,7 +1177,14 @@
       pause: '<rect x="14" y="4" width="4" height="16" rx="1"/><rect x="6" y="4" width="4" height="16" rx="1"/>',
       lecture: '<path d="M6 3 20 12 6 21z"/>',
       recommencer: '<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>',
-      actualiser: '<path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/>'
+      actualiser: '<path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/>',
+      plus: '<path d="M5 12h14"/><path d="M12 5v14"/>',
+      croix: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+      viseur: '<line x1="2" x2="5" y1="12" y2="12"/><line x1="19" x2="22" y1="12" y2="12"/><line x1="12" x2="12" y1="2" y2="5"/><line x1="12" x2="12" y1="19" y2="22"/><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="3"/>',
+      calques: '<path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/>',
+      chevron: '<path d="m6 9 6 6 6-6"/>',
+      flecheBas: '<path d="M12 5v14"/><path d="m19 12-7 7-7-7"/>',
+      flecheHaut: '<path d="m5 12 7-7 7 7"/><path d="M12 19V5"/>'
     };
     // Balise <svg> complète (décorative : aria-hidden). nom : clé de ICONES ; taille en px.
     function svg(nom, taille) {
@@ -1206,7 +1265,7 @@
       const bouton = document.createElement('button');
       bouton.type = 'button';
       bouton.className = 'legende-bouton';
-      bouton.textContent = 'Légende';
+      bouton.innerHTML = svg('calques', 18) + '<span>Légende</span>';
       const majBouton = () => bouton.setAttribute('aria-expanded', div.classList.contains('repliee') ? 'false' : 'true');
       bouton.addEventListener('click', () => { div.classList.toggle('repliee'); majBouton(); });
       majBouton();
@@ -2000,8 +2059,8 @@
       html += '<div class="leg-bloc"><div class="leg-titre">Familles</div>';
       for (const [cleF, f] of Object.entries(PS_FAMILLES)) {
         const types = Object.values(PS_TYPES).filter(t => t.famille === cleF);
-        html += '<div class="leg-famille"><div class="leg-famille-nom">' + f.libelle + '</div><div class="leg-types">'
-          + types.map(t => '<span class="leg-type">' + svg(t.icone, 16) + t.libelle + '</span>').join('') + '</div></div>';
+        html += '<div class="leg-famille"><span class="leg-famille-nom">' + f.libelle + '</span><span class="leg-types">'
+          + types.map(t => '<span class="leg-type" title="' + t.libelle + '" role="img" aria-label="' + t.libelle + '">' + svg(t.icone, 16) + '</span>').join('') + '</span></div>';
       }
       html += '</div><div class="note">Seuils de démo, non officiels</div>';
       legendeCorps.innerHTML = html;
@@ -2174,8 +2233,9 @@
     controleRecentrer.onAdd = function () {
       const b = L.DomUtil.create('button', 'recentrer-bouton');
       b.type = 'button';
-      b.textContent = 'Recentrer';
-      b.title = 'Cadrer la carte sur les points et les stations suivies';
+      b.innerHTML = svg('viseur', 20);
+      b.title = 'Recentrer';
+      b.setAttribute('aria-label', 'Recentrer');
       L.DomEvent.disableClickPropagation(b);   // toucher le bouton ne place pas de point
       b.addEventListener('click', cadrer);
       return b;
@@ -2223,7 +2283,7 @@
       boutonPoint = document.createElement('button');
       boutonPoint.type = 'button';
       boutonPoint.className = 'ps-bouton';
-      boutonPoint.textContent = '+ Ajouter un point';
+      boutonPoint.innerHTML = svg('plus', 18) + '<span class="ps-libelle">Ajouter un point</span>';
       boutonPoint.setAttribute('aria-pressed', 'false');
       aidePoint = document.createElement('div');
       aidePoint.className = 'ps-aide';
@@ -2241,7 +2301,7 @@
       carte.closePopup();   // la fenêtre du point précédent ne doit pas gêner le toucher suivant
       placementActif = true;
       boutonPoint.classList.add('actif');
-      boutonPoint.textContent = 'Annuler le placement';
+      boutonPoint.innerHTML = svg('croix', 18) + '<span class="ps-libelle">Annuler le placement</span>';
       boutonPoint.setAttribute('aria-pressed', 'true');
       aidePoint.hidden = false;
       ps.zone.classList.add('placement');
@@ -2251,7 +2311,7 @@
       placementActif = false;
       if (!boutonPoint) return;
       boutonPoint.classList.remove('actif');
-      boutonPoint.textContent = '+ Ajouter un point';
+      boutonPoint.innerHTML = svg('plus', 18) + '<span class="ps-libelle">Ajouter un point</span>';
       boutonPoint.setAttribute('aria-pressed', 'false');
       aidePoint.hidden = true;
       ps.zone.classList.remove('placement');
@@ -2812,7 +2872,8 @@
     function majBarre() {
       const fini = tSim >= dureeMinutes();
       demo.horloge.textContent = heureSimulee(tSim);
-      demo.phase.textContent = fini ? 'Fin du scénario' : phaseActuelle();
+      const PHASES = { 'Veille': 'Veille', 'Montée': 'Montée des eaux', 'Pic': 'Pic de crue', 'Décrue': 'Décrue' };
+      demo.phase.textContent = (fini ? 'Fin du scénario' : (PHASES[phaseActuelle()] || phaseActuelle())) + ' · scénario fictif';
       demo.lecture.querySelector('.demo-icone').innerHTML = svg(enLecture ? 'pause' : 'lecture', 18);
       demo.lecture.querySelector('.demo-libelle').textContent = enLecture ? 'Pause' : (fini ? 'Rejouer' : 'Lecture');
       demo.vitesse.querySelector('.demo-icone').textContent = LIBELLES_VITESSE[iVitesse];
